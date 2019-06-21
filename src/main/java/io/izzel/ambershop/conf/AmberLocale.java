@@ -43,7 +43,7 @@ public class AmberLocale {
         val path = dir.resolve("locale.conf");
         if (!Files.exists(path)) {
             val la = Sponge.getAssetManager().getAsset(inst, "locale/" + cm.get().language + ".conf")
-                    .orElse(Sponge.getAssetManager().getAsset(inst, "locale/zh_cn.conf")
+                    .orElse(Sponge.getAssetManager().getAsset(inst, "locale/en_us.conf")
                             .orElseThrow(() -> new IOException("No default language present!")));
             la.copyToFile(path);
         }
