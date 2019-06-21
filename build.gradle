@@ -1,0 +1,87 @@
+buildscript {
+    repositories {
+        jcenter()
+        maven {
+            name = "forge"
+            url = "https://files.minecraftforge.net/maven"
+        }
+        maven {
+            name = 'sponge'
+            url = 'https://repo.spongepowered.org/maven'
+        }
+    }
+    dependencies {
+        classpath "net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT"
+        classpath 'org.spongepowered:mixingradle:0.6-SNAPSHOT'
+    }
+}
+
+plugins {
+    id 'org.spongepowered.plugin' version '0.8.1'
+    id 'com.github.johnrengelman.shadow' version '4.0.4'
+}
+apply plugin: 'signing'
+apply plugin: "net.minecraftforge.gradle.forge"
+apply plugin: 'org.spongepowered.mixin'
+
+group = 'io.izzel.ambershop'
+version = '1.0.0'
+
+minecraft {
+    version = '1.12.2-14.23.5.2768'
+    mappings = 'stable_39'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile group: 'net.sf.trove4j', name: 'trove4j', version: '3.0.3'
+    shadow 'org.spongepowered:spongeapi:7.1.0'
+    shadow 'org.spongepowered:spongecommon:7.1.0:dev'
+    shadow 'org.spongepowered:mixin:0.7.11-SNAPSHOT'
+    shadow 'org.projectlombok:lombok:1.18.2'
+    shadow group: 'io.netty', name: 'netty-buffer', version: '4.1.9.Final'
+}
+
+sponge.plugin.id = 'ambershop'
+
+defaultTasks 'build', 'shadowJar'
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+shadowJar {
+    taskActions.removeIf { it.actionClassName.contains 'configureShadowTask' }
+    minimize()
+
+    mainSpec.sourcePaths.clear()
+    dependsOn reobfJar
+    afterEvaluate {
+        from zipTree(reobfJar.jar)
+    }
+
+    exclude 'dummyThing', 'META-INF/fml_cache_annotation.json', 'META-INF/fml_cache_class_versions.json'
+    append 'mixins.ambershop.refmap.json'
+}
+
+signing {
+    useGpgCmd()
+    sign jar, shadowJar, sourceJar
+}
+
+mixin {
+    add sourceSets.main, 'mixins.ambershop.refmap.json'
+}
+
+jar {
+    manifest.attributes(
+            'TweakClass': 'org.spongepowered.asm.launch.MixinTweaker',
+            'MixinConfigs': 'mixins.ambershop.json',
+            'FMLCorePluginContainsFMLMod': 'true',
+            'ForceLoadAsMod': 'true'
+    )
+    from 'LICENSE'
+}
