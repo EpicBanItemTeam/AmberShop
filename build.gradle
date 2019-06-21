@@ -34,10 +34,15 @@ minecraft {
 
 repositories {
     mavenCentral()
+    maven {
+        name = 'bstats-repo'
+        url = 'http://repo.bstats.org/content/repositories/releases'
+    }
 }
 
 dependencies {
     compile group: 'net.sf.trove4j', name: 'trove4j', version: '3.0.3'
+    compile 'org.bstats:bstats-sponge:1.2'
     shadow 'org.spongepowered:spongeapi:7.1.0'
     shadow 'org.spongepowered:spongecommon:7.1.0:dev'
     shadow 'org.spongepowered:mixin:0.7.11-SNAPSHOT'
@@ -62,7 +67,8 @@ shadowJar {
     afterEvaluate {
         from zipTree(reobfJar.jar)
     }
-
+    relocate 'org.bstats', 'io.izzel.ambershop.internal.org.bstats'
+    relocate 'gnu.trove', 'io.izzel.ambershop.internal.gnu.trove'
     exclude 'dummyThing', 'META-INF/fml_cache_annotation.json', 'META-INF/fml_cache_class_versions.json'
     append 'mixins.ambershop.refmap.json'
 }

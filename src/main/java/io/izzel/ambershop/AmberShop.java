@@ -9,9 +9,11 @@ import io.izzel.ambershop.data.ShopDataSource;
 import io.izzel.ambershop.listener.*;
 import io.izzel.ambershop.util.AmberTasks;
 import lombok.val;
+import org.bstats.sponge.Metrics;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
+import org.spongepowered.api.event.game.state.GameStartingServerEvent;
 import org.spongepowered.api.event.game.state.GameStoppingEvent;
 import org.spongepowered.api.plugin.Dependency;
 import org.spongepowered.api.plugin.Plugin;
@@ -45,9 +47,10 @@ public class AmberShop {
     @Inject private ShopDataSource dataSource;
     @Inject private AmberTasks tasks;
     @Inject private AmberConfManager config;
+    @Inject private Metrics metrics;
 
     @Listener
-    public void onServerStart(GameStartedServerEvent event) {
+    public void onServerStart(GameStartingServerEvent event) {
         tasks.init();
         locale.init();
         dataSource.init();
