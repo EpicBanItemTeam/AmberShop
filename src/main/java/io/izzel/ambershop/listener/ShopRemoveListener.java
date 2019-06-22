@@ -6,20 +6,13 @@ import io.izzel.ambershop.conf.AmberConfManager;
 import io.izzel.ambershop.conf.AmberLocale;
 import io.izzel.ambershop.data.ShopDataSource;
 import io.izzel.ambershop.util.AmberTasks;
-import lombok.SneakyThrows;
 import lombok.val;
-import org.spongepowered.api.Sponge;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
-import org.spongepowered.api.event.filter.IsCancelled;
 import org.spongepowered.api.event.filter.type.Include;
-import org.spongepowered.api.world.Location;
-
-import java.nio.ByteBuffer;
-import java.util.concurrent.ExecutionException;
 
 @Singleton
 public class ShopRemoveListener {
@@ -35,6 +28,8 @@ public class ShopRemoveListener {
     public void onBreak(ChangeBlockEvent event) {
         event.getTransactions().forEach(transaction -> {
             val origin = transaction.getOriginal();
+            val direction = origin.get(Keys.DIRECTION);
+            if (!direction.isPresent()) return;
             val pos = transaction.getOriginal().getLocation();
             if (pos.isPresent()) {
                 val loc = pos.get();
@@ -49,7 +44,7 @@ public class ShopRemoveListener {
                                 player.sendMessage(locale.getText("trade.protect"));
                             }
                         } else {
-                            display.reset(loc, origin.get(Keys.DIRECTION).get()); // reset sign
+                            display.reset(loc, direction.get()); // reset sign
                             tasks.async().submit(() -> {
                                 val result = dataSource.removeRecord(rec.get()).get();
                                 player.sendMessage(result.reason());
@@ -59,8 +54,10 @@ public class ShopRemoveListener {
                     } else {
                         if (conf.get().shopSettings.protectShops) {
                             event.setCancelled(true);
-                        } else
+                        } else {
+                            display.reset(loc, direction.get());
                             dataSource.removeRecord(rec.get());
+                        }
                     }
                 }
             }

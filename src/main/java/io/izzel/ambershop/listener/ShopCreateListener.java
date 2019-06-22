@@ -7,7 +7,6 @@ import io.izzel.ambershop.conf.AmberLocale;
 import io.izzel.ambershop.data.ShopDataSource;
 import io.izzel.ambershop.data.ShopRecord;
 import io.izzel.ambershop.util.AmberTasks;
-import io.izzel.ambershop.util.Util;
 import lombok.val;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.data.type.HandTypes;
@@ -56,15 +55,14 @@ public class ShopCreateListener {
                             .onHover(TextActions.showItem(item.createSnapshot())).build())
                     .concat(locale.getText("trade.input-price.2")));
             //todo should have a better api for replacing Text, but later next time
-            val input = tasks.inputChat(player, cm.get().shopSettings.inputExpireTime, TimeUnit.SECONDS,
-                    Util::isDouble, p -> p.sendMessage(locale.getText("trade.format-err"))).get().flatMap(Util::asDouble);
+            val input = tasks.inputNumber(player, cm.get().shopSettings.inputExpireTime, TimeUnit.SECONDS).get();
             if (input.isPresent()) {
                 val price = input.get();
                 val record = ShopRecord.of(player, loc, price);
                 record.setItemType(item);
                 val csr = ds.addRecord(record).get();
                 player.sendMessage(locale.getText("commands.create.success", csr.id));
-            } else player.sendMessage(locale.getText("trade.expire"));
+            }
             return null;
         });
     }

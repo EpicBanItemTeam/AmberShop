@@ -29,6 +29,7 @@ import org.spongepowered.api.event.filter.cause.First;
 import org.spongepowered.api.event.filter.type.Include;
 import org.spongepowered.api.event.item.inventory.InteractInventoryEvent;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
+import org.spongepowered.api.item.inventory.type.CarriedInventory;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.service.user.UserStorageService;
 import org.spongepowered.api.text.Text;
@@ -65,7 +66,14 @@ public class DisplayListener {
     @Include(InteractInventoryEvent.Close.class)
     @Listener
     public void onChestClose(InteractInventoryEvent event) {
-        System.out.println(event.getTargetInventory());
+        if (event.getTargetInventory() instanceof CarriedInventory) {
+            val carrier = ((CarriedInventory) event.getTargetInventory()).getCarrier();
+            if (carrier.isPresent() && carrier.get() instanceof Chest) {
+                val chest = ((Chest) carrier.get());
+                val loc = chest.getLocation();
+                ds.getByLocation(loc).ifPresent(this::addBlockChange);
+            }
+        }
     }
 
     @Include({InteractBlockEvent.Primary.class, InteractBlockEvent.Secondary.class})
@@ -73,17 +81,18 @@ public class DisplayListener {
     public void onSignTradeAndUpdate(InteractBlockEvent event, @First Player player) {
         if (conf.get().shopSettings.displaySign) {
             if (event.getTargetBlock().getState().getType() == BlockTypes.AIR) { // generated signs
-                val loc = event.getTargetBlock().getLocation().get();
-                val opt = ((AmberPlayer) player).getSign(loc);
+                val loc = event.getTargetBlock().getLocation();
+                if (!loc.isPresent()) return;
+                val opt = ((AmberPlayer) player).getSign(loc.get());
                 if (opt.isPresent()) {
                     val direction = opt.get();
-                    val chestLoc = loc.sub(direction.asBlockOffset());
+                    val chestLoc = loc.get().sub(direction.asBlockOffset());
                     ds.getByLocation(chestLoc).ifPresent(rec -> {
                         if (event instanceof InteractBlockEvent.Secondary) { // right click for updating sign info
                             event.setCancelled(true);
                             Optional.ofNullable(map.get(player.getUniqueId())).ifPresent(task -> {
                                 val lines = task.makeSignLines(rec);
-                                tasks.sync().submit(() -> ((AmberPlayer) player).sendSign(loc, direction, lines));
+                                tasks.sync().submit(() -> ((AmberPlayer) player).sendSign(loc.get(), direction, lines));
                             });
                         } else if (event instanceof InteractBlockEvent.Primary) { // left click for trading
                             val newEvent = SpongeEventFactory.createInteractBlockEventPrimaryMainHand(event.getCause(),
@@ -169,15 +178,16 @@ public class DisplayListener {
             val location = record.getLocation();
             if (!location.getTileEntity().filter(it -> it instanceof Chest).isPresent()) return;
             val block = location.getBlock();
-            if (conf.get().shopSettings.displaySign) {
-                val direction = block.get(Keys.DIRECTION).get();
-                val sign = location.add(direction.asBlockOffset());
-                if (sign.getBlockType() != BlockTypes.AIR) return;
-                ((AmberPlayer) player).sendSign(sign, direction, makeSignLines(record));
-            }
             if (conf.get().shopSettings.displayItem) {
                 val itemLoc = location.add(0.5, 1.2, 0.5);
                 ((AmberPlayer) player).sendDroppedItem(itemLoc, record.getItemType().createStack());
+            }
+            if (conf.get().shopSettings.displaySign) {
+                val direction = block.get(Keys.DIRECTION);
+                if (!direction.isPresent()) return;
+                val sign = location.add(direction.get().asBlockOffset());
+                if (sign.getBlockType() != BlockTypes.AIR) return;
+                ((AmberPlayer) player).sendSign(sign, direction.get(), makeSignLines(record));
             }
         }
 

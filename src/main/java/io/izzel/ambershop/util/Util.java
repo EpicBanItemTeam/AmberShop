@@ -3,6 +3,11 @@ package io.izzel.ambershop.util;
 import lombok.experimental.UtilityClass;
 
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 
 @UtilityClass
 public class Util {
@@ -39,6 +44,35 @@ public class Util {
         } catch (Exception e) {
             return Optional.empty();
         }
+    }
+
+    public <U, V> Future<V> mapFuture(Future<U> future, Function<? super U, ? extends V> mapper) {
+        return new Future<V>() {
+            @Override
+            public boolean cancel(boolean mayInterruptIfRunning) {
+                return future.cancel(mayInterruptIfRunning);
+            }
+
+            @Override
+            public boolean isCancelled() {
+                return future.isCancelled();
+            }
+
+            @Override
+            public boolean isDone() {
+                return future.isDone();
+            }
+
+            @Override
+            public V get() throws InterruptedException, ExecutionException {
+                return mapper.apply(future.get());
+            }
+
+            @Override
+            public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+                return mapper.apply(future.get(timeout, unit));
+            }
+        };
     }
 
 }

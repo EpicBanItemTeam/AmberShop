@@ -37,7 +37,7 @@ public class OneTimeChatListener implements EventListener<MessageChannelEvent.Ch
     }
 
     @Override
-    public void handle(MessageChannelEvent.Chat event) throws Exception {
+    public void handle(MessageChannelEvent.Chat event) {
         if (event.isCancelled()) return;
         val sender = event.getCause().first(Player.class);
         val dest = player.get();

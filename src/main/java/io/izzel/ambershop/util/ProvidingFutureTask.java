@@ -12,6 +12,7 @@ public class ProvidingFutureTask<T> extends FutureTask<Optional<T>> {
 
     private final long timeout;
     private final TimeUnit unit;
+    private boolean done;
 
     public ProvidingFutureTask(long timeout, TimeUnit unit) {
         super(Optional::empty);
@@ -30,8 +31,13 @@ public class ProvidingFutureTask<T> extends FutureTask<Optional<T>> {
         return Optional.ofNullable(queue.poll(timeout, unit));
     }
 
+    @Override
+    public boolean isDone() {
+        return done;
+    }
+
     public void provide(T value) {
-        queue.offer(value);
+        done = done || queue.offer(value);
     }
 
 }

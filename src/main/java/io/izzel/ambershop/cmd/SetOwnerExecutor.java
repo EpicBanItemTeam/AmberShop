@@ -35,8 +35,9 @@ public class SetOwnerExecutor implements CommandExecutor {
                 val opt = Blocks.playerOnCursor(player).flatMap(ds::getByLocation);
                 if (opt.isPresent()) {
                     val rec = opt.get();
-                    if (rec.owner.equals(player.getUniqueId()) ? player.hasPermission("ambershop.user.setowner")
-                            : player.hasPermission("ambershop.admin.setowner")) {
+                    if ((rec.owner.equals(player.getUniqueId()) ? player.hasPermission("ambershop.user.setowner")
+                            : player.hasPermission("ambershop.admin.setowner")) &&
+                            owner.hasPermission("ambershop.user.create")) {
                         rec.setOwner(owner.getUniqueId());
                         tasks.async().submit(() -> {
                             val result = ds.updateRecord(rec).get();
