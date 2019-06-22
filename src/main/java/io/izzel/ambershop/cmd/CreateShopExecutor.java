@@ -7,6 +7,7 @@ import io.izzel.ambershop.data.ShopDataSource;
 import io.izzel.ambershop.data.ShopRecord;
 import io.izzel.ambershop.util.AmberTasks;
 import io.izzel.ambershop.util.Blocks;
+import io.izzel.ambershop.util.Util;
 import lombok.val;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.command.CommandResult;
@@ -29,7 +30,11 @@ class CreateShopExecutor implements CommandExecutor {
     @NonnullByDefault
     @Override
     public CommandResult execute(CommandSource src, CommandContext args) {
-        val price = args.<Double>getOne("price").get();
+        val price = args.<String>getOne("price").flatMap(Util::asDouble);
+        if (!price.isPresent()) {
+            src.sendMessage(locale.getText("trade.format-err"));
+            return CommandResult.empty();
+        }
         if (src instanceof Player) {
             val player = ((Player) src);
             val opt = Blocks.playerOnCursor(player);
@@ -45,7 +50,7 @@ class CreateShopExecutor implements CommandExecutor {
                                 if (osr.isPresent()) {
                                     player.sendMessage(locale.getText("commands.create.fail.exist-shop"));
                                 } else {
-                                    val sr = ShopRecord.of(player, opt.get(), price);
+                                    val sr = ShopRecord.of(player, opt.get(), price.get());
                                     sr.setItemType(item.get());
                                     val csr = ds.addRecord(sr).get();
                                     player.sendMessage(locale.getText("commands.create.success", csr.id));

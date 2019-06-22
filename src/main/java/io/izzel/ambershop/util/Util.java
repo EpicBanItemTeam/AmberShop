@@ -2,12 +2,15 @@ package io.izzel.ambershop.util;
 
 import lombok.experimental.UtilityClass;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 @UtilityClass
 public class Util {
@@ -23,7 +26,7 @@ public class Util {
 
     public Optional<Double> asDouble(String str) {
         try {
-            return Optional.of(Double.parseDouble(str));
+            return Optional.of(BigDecimal.valueOf(Double.parseDouble(str)).setScale(2, RoundingMode.HALF_UP).doubleValue());
         } catch (Exception e) {
             return Optional.empty();
         }

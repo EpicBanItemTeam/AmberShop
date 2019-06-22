@@ -24,7 +24,7 @@ public class AmberCommands {
                     .description(locale.getText("commands.create.desc"))
                     .extendedDescription(locale.getText("commands.create.extDesc"))
                     .permission("ambershop.user.create")
-                    .arguments(GenericArguments.doubleNum(Text.of("price")))
+                    .arguments(GenericArguments.string(Text.of("price")))
                     .executor(cse)
                     .build();
             executor.child(create, "create", "c");
