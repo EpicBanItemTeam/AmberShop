@@ -57,8 +57,12 @@ class PlayerShopTrading implements Trading {
         while (iterator.hasNext()) {
             val item = iterator.next();
             success += item.getQuantity();
-            toInv.offer(item);
-            success -= item.getQuantity();
+            if (unlimited) {
+                item.setQuantity(0);
+            } else {
+                toInv.offer(item);
+                success -= item.getQuantity();
+            }
             if (item.getQuantity() == 0) iterator.remove();
         }
 
