@@ -11,7 +11,9 @@ import io.izzel.ambershop.util.AmberTasks;
 import lombok.val;
 import org.bstats.sponge.Metrics;
 import org.spongepowered.api.Sponge;
+import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.game.GameReloadEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.event.game.state.GameStartingServerEvent;
 import org.spongepowered.api.event.game.state.GameStoppingEvent;
@@ -69,6 +71,12 @@ public class AmberShop {
             }
         }
         locale.info("startup", container.getVersion().get());
+    }
+
+    @Listener
+    public void onReload(GameReloadEvent event) {
+        val source = event.getCause().first(CommandSource.class).orElse(Sponge.getServer().getConsole());
+        Sponge.getCommandManager().process(source, "ambershop reload");
     }
 
     @Listener

@@ -57,6 +57,16 @@ public class AmberCommands {
                     .executor(spe)
                     .build();
             executor.child(price, "setprice", "price", "p");
+            val reload = CommandSpec.builder()
+                    .permission("ambershop.admin.reload")
+                    .executor((src, args) -> {
+                        locale.init();
+                        cm.reload();
+                        src.sendMessage(locale.getText("commands.reload.complete"));
+                        return CommandResult.success();
+                    })
+                    .build();
+            executor.child(reload, "reload");
         }
         root = executor.build();
     }
