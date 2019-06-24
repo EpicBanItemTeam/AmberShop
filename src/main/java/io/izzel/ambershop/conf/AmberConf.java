@@ -10,6 +10,9 @@ import java.util.Locale;
 @ConfigSerializable
 public class AmberConf {
 
+    @Setting(comment = "Check for update.")
+    public boolean updater = true;
+
     @Setting(comment = "Default language is en_us.")
     public String language = Locale.getDefault().toString().toLowerCase();
 

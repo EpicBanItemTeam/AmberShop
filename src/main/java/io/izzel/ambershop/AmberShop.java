@@ -8,6 +8,7 @@ import io.izzel.ambershop.conf.AmberLocale;
 import io.izzel.ambershop.data.ShopDataSource;
 import io.izzel.ambershop.listener.*;
 import io.izzel.ambershop.util.AmberTasks;
+import io.izzel.ambershop.util.Updater;
 import lombok.val;
 import org.bstats.sponge.Metrics;
 import org.spongepowered.api.Sponge;
@@ -50,6 +51,7 @@ public class AmberShop {
     @Inject private AmberTasks tasks;
     @Inject private AmberConfManager config;
     @Inject private Metrics metrics;
+    @Inject private Updater updater;
 
     @Listener
     public void onServerStart(GameStartingServerEvent event) {
@@ -69,6 +71,9 @@ public class AmberShop {
             if (config.get().shopSettings.displaySign || config.get().shopSettings.displayItem) {
                 Sponge.getEventManager().registerListeners(this, INJECTOR.getInstance(DisplayListener.class));
             }
+        }
+        if (config.get().updater) {
+            updater.init();
         }
         locale.info("startup", container.getVersion().get());
     }

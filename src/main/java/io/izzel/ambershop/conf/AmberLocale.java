@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.izzel.ambershop.AmberShop;
 import io.izzel.ambershop.data.ShopRecord;
+import io.izzel.ambershop.util.Util;
 import lombok.SneakyThrows;
 import lombok.val;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
@@ -54,15 +55,20 @@ public class AmberLocale {
     @SneakyThrows
     public Text getText(String node, Object... params) {
         return Optional.ofNullable(root.getNode((Object[]) node.split("\\.")).getString())
-                .map(it -> TextSerializers.FORMATTING_CODE.deserialize(replace(it, params)))
-                .orElseGet(() -> Text.of(replace("Missing {0}", String.join(".", node))));
+                .map(it -> TextSerializers.FORMATTING_CODE.deserialize(Util.replace(it, params)))
+                .orElseGet(() -> Text.of(Util.replace("Missing {0}", String.join(".", node))));
     }
 
     public String getString(String node, Object... params) {
-        return replace(
+        return Util.replace(
                 root.getNode((Object[]) node.split("\\."))
-                        .getString(replace("Missing {0}", String.join(".", node))),
+                        .getString(Util.replace("Missing {0}", String.join(".", node))),
                 params);
+    }
+
+    @SneakyThrows
+    public List<String> getStringList(String node) {
+        return root.getNode((Object[]) node.split("\\.")).getList(TypeToken.of(String.class));
     }
 
     public void info(String node, Object... params) {
@@ -76,7 +82,7 @@ public class AmberLocale {
         val type = getString("trade.type." + (record.price < 0 ? "sell" : "buy"));
         val stock = record.isUnlimited() ? getString("trade.type.unlimited") : String.valueOf(record.getStock());
         val price = record.price;
-        return list.stream().map(it -> replace(it, owner, null, stock, price, type))
+        return list.stream().map(it -> Util.replace(it, owner, null, stock, price, type))
                 .map(it -> {
                     val idx = it.indexOf("{1}");
                     if (idx != -1) {
@@ -94,27 +100,6 @@ public class AmberLocale {
 
     public Text itemName(ItemStack itemStack) {
         return itemStack.get(Keys.DISPLAY_NAME).orElse(TranslatableText.of(itemStack.getTranslation()));
-    }
-
-    // this is a lot faster than the internal formatter
-    private static String replace(String template, Object... args) {
-        if (args.length == 0 || template.length() == 0) {
-            return template;
-        }
-        val arr = template.toCharArray();
-        val stringBuilder = new StringBuilder(template.length());
-        for (int i = 0; i < arr.length; i++) {
-            if (arr[i] == '{' && Character.isDigit(arr[Math.min(i + 1, arr.length - 1)])
-                    && arr[Math.min(i + 1, arr.length - 1)] - '0' < args.length
-                    && arr[Math.min(i + 2, arr.length - 1)] == '}'
-                    && args[arr[i + 1] - '0'] != null) {
-                stringBuilder.append(args[arr[i + 1] - '0']);
-                i += 2;
-            } else {
-                stringBuilder.append(arr[i]);
-            }
-        }
-        return stringBuilder.toString();
     }
 
 }
