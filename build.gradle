@@ -52,7 +52,7 @@ dependencies {
 
 sponge.plugin.id = 'ambershop'
 
-defaultTasks 'build', 'shadowJar'
+defaultTasks 'clean', 'build', 'shadowJar'
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'

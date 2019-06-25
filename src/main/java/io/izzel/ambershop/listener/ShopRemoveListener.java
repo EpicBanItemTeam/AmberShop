@@ -24,7 +24,7 @@ public class ShopRemoveListener {
     @Inject private DisplayListener display;
 
     @Include(ChangeBlockEvent.Break.class)
-    @Listener(order = Order.FIRST, beforeModifications = true)
+    @Listener(order = Order.LAST, beforeModifications = true)
     public void onBreak(ChangeBlockEvent event) {
         event.getTransactions().forEach(transaction -> {
             val origin = transaction.getOriginal();
