@@ -95,7 +95,7 @@ public class DisplayListener {
                                 tasks.sync().submit(() -> ((AmberPlayer) player).sendSign(loc.get(), direction, lines));
                             });
                         } else if (event instanceof InteractBlockEvent.Primary) { // left click for trading
-                            val newEvent = SpongeEventFactory.createInteractBlockEventPrimaryMainHand(event.getCause(),
+                            val newEvent = SpongeEventFactory.createInteractBlockEventPrimaryMainHand(event.getCause().with(this),
                                     HandTypes.MAIN_HAND, Optional.empty(), chestLoc.getBlock().snapshotFor(chestLoc), direction);
                             trade.onTrade(newEvent, player);
                         }

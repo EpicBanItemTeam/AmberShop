@@ -23,7 +23,7 @@ public class ShopRemoveListener {
     @Inject private AmberTasks tasks;
     @Inject private DisplayListener display;
 
-    @Include(ChangeBlockEvent.Break.class)
+    @Include({ChangeBlockEvent.Break.class, ChangeBlockEvent.Modify.class})
     @Listener(order = Order.LAST, beforeModifications = true)
     public void onBreak(ChangeBlockEvent event) {
         event.getTransactions().forEach(transaction -> {

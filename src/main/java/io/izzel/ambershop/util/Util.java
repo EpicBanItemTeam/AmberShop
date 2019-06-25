@@ -1,11 +1,20 @@
 package io.izzel.ambershop.util;
 
+import io.izzel.ambershop.AmberShop;
+import io.izzel.ambershop.trade.TransactionResult;
 import lombok.experimental.UtilityClass;
 import lombok.val;
+import org.spongepowered.api.Sponge;
+import org.spongepowered.api.event.cause.Cause;
+import org.spongepowered.api.event.cause.EventContext;
+import org.spongepowered.api.event.cause.EventContextKeys;
+import org.spongepowered.api.service.economy.EconomyService;
+import org.spongepowered.api.service.economy.transaction.ResultType;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -99,6 +108,16 @@ public class Util {
             }
         }
         return stringBuilder.toString();
+    }
+
+    public TransactionResult performEconomy(UUID uuid, BigDecimal price, boolean isWithdraw) {
+        val eco = Sponge.getServiceManager().provideUnchecked(EconomyService.class);
+        val playerAcc = eco.getOrCreateAccount(uuid).get();
+        val ctx = EventContext.builder().add(EventContextKeys.PLUGIN, AmberShop.SINGLETON.container).build();
+        val cause = Cause.of(ctx, AmberShop.SINGLETON.container);
+        val currency = eco.getDefaultCurrency();
+        val result = isWithdraw ? playerAcc.withdraw(currency, price, cause) : playerAcc.deposit(currency, price, cause);
+        return result.getResult() == ResultType.SUCCESS ? TransactionResult.SUCCESS : TransactionResult.ECONOMY_ISSUE;
     }
 
 }

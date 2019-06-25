@@ -81,7 +81,7 @@ public class AmberLocale {
         val owner = Sponge.getServiceManager().provideUnchecked(UserStorageService.class).get(record.owner).map(User::getName).orElse("");
         val type = getString("trade.type." + (record.price < 0 ? "sell" : "buy"));
         val stock = record.isUnlimited() ? getString("trade.type.unlimited") : String.valueOf(record.getStock());
-        val price = record.price;
+        val price = Math.abs(record.price);
         return list.stream().map(it -> Util.replace(it, owner, null, stock, price, type))
                 .map(it -> {
                     val idx = it.indexOf("{1}");

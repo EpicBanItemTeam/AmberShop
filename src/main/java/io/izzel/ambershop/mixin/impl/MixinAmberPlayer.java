@@ -9,6 +9,7 @@ import net.minecraft.network.NetHandlerPlayServer;
 import net.minecraft.network.play.server.*;
 import net.minecraft.tileentity.TileEntitySign;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.WorldServer;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.living.player.Player;
@@ -19,9 +20,7 @@ import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.common.item.inventory.util.ItemStackUtil;
 import org.spongepowered.common.text.SpongeTexts;
-import org.spongepowered.common.world.WorldUtil;
 
 import java.util.*;
 
@@ -62,8 +61,8 @@ public abstract class MixinAmberPlayer implements AmberPlayer, Player {
     public void sendDroppedItem(Location<World> location, ItemStack stack) {
         val lastId = eidMap.remove(location);
         if (lastId != null) destroyEntity(lastId);
-        val entityItem = new EntityItem(WorldUtil.asNative(location.getExtent()),
-                location.getX(), location.getY(), location.getZ(), ItemStackUtil.toNative(stack));
+        val entityItem = new EntityItem(((WorldServer) location.getExtent()),
+                location.getX(), location.getY(), location.getZ(), ((net.minecraft.item.ItemStack) (Object) stack));
         val newId = entityItem.getEntityId();
         eidMap.put(location, newId);
         val spawn = new SPacketSpawnObject(entityItem, 2, 1);// type:2 Item data:1 magic value

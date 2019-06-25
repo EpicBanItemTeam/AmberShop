@@ -17,12 +17,17 @@ public class Trades {
         val chestInv = ((TileEntityCarrier) location.getTileEntity().get()).getInventory();
         val playerInv = Inventories.getMainInventory(player);
         val playerUid = player.getUniqueId();
-        if (sell)
-            return new PlayerShopTrading(playerInv, chestInv, playerUid, record.owner, amount,
-                    record.price, record.getItemType().createStack(), record.isUnlimited());
-        else
-            return new PlayerShopTrading(chestInv, playerInv, record.owner, playerUid, amount,
-                    record.price, record.getItemType().createStack(), record.isUnlimited());
+        if (record.isUnlimited()) {
+            return new UnlimitedShopTrading(playerInv, playerUid, amount, Math.abs(record.price), record.getItemType().createStack(), sell);
+        } else {
+            if (sell) {
+                return new PlayerShopTrading(playerInv, chestInv, playerUid, record.owner, amount,
+                        Math.abs(record.price), record.getItemType().createStack());
+            } else {
+                return new PlayerShopTrading(chestInv, playerInv, record.owner, playerUid, amount,
+                        Math.abs(record.price), record.getItemType().createStack());
+            }
+        }
     }
 
 }
