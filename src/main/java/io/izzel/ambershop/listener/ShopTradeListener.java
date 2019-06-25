@@ -18,12 +18,14 @@ import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.living.player.gamemode.GameModes;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.block.InteractBlockEvent;
+import org.spongepowered.api.event.filter.IsCancelled;
 import org.spongepowered.api.event.filter.cause.First;
 import org.spongepowered.api.event.filter.type.Include;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.service.user.UserStorageService;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.action.TextActions;
+import org.spongepowered.api.util.Tristate;
 
 import java.util.concurrent.TimeUnit;
 
@@ -36,6 +38,7 @@ public class ShopTradeListener {
     @Inject private ShopDataSource ds;
     @Inject private DisplayListener display;
 
+    @IsCancelled(Tristate.UNDEFINED)
     @Listener
     @Include(InteractBlockEvent.Primary.class)
     public void onTrade(InteractBlockEvent event, @First Player player) {
@@ -73,7 +76,6 @@ public class ShopTradeListener {
             }));
         }
     }
-
 
     private Text manage(ShopRecord record) {
         val builder = Text.builder();

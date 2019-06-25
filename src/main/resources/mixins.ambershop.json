@@ -1,6 +1,6 @@
 {
   "required": true,
-  "minVersion": "0.7.11",
+  "minVersion": "0.7.10",
   "package": "io.izzel.ambershop.mixin.impl",
   "refmap": "mixins.ambershop.refmap.json",
   "target": "@env(DEFAULT)",
