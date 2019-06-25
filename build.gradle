@@ -25,7 +25,7 @@ apply plugin: "net.minecraftforge.gradle.forge"
 apply plugin: 'org.spongepowered.mixin'
 
 group = 'io.izzel.ambershop'
-version = '1.0.1'
+version = '1.0.2'
 
 minecraft {
     version = '1.12.2-14.23.5.2768'
