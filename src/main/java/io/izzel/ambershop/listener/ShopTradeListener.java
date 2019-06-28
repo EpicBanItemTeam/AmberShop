@@ -44,7 +44,7 @@ public class ShopTradeListener {
     public void onTrade(InteractBlockEvent event, @First Player player) {
         if (player.gameMode().get().equals(GameModes.CREATIVE)) return; // as creative players should not buy or sell
         val block = event.getTargetBlock();
-        val handEmpty = !event.getCause().first(DisplayListener.class).isPresent(); // clicking sign do not need empty hand
+        val handEmpty = event.getCause().first(DisplayListener.class).isPresent(); // clicking sign do not need empty hand
         if (block.getState().getType().equals(BlockTypes.CHEST) && (handEmpty ||
                 (!player.getItemInHand(HandTypes.MAIN_HAND).isPresent()) ||
                 player.getItemInHand(HandTypes.MAIN_HAND).get().getType() == ItemTypes.AIR ||

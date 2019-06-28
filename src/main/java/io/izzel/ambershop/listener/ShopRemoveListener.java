@@ -38,18 +38,19 @@ public class ShopRemoveListener {
                     val first = event.getCause().first(Player.class);
                     if (first.isPresent()) {
                         val player = first.get();
-                        if (!player.getUniqueId().equals(rec.get().owner)) {
-                            if (conf.get().shopSettings.protectShops) {
-                                event.setCancelled(true);
-                                player.sendMessage(locale.getText("trade.protect"));
-                            }
-                        } else {
+                        if (player.getUniqueId().equals(rec.get().owner) ? player.hasPermission("ambershop.user.remove")
+                                : player.hasPermission("ambershop.admin.remove")) {
                             display.reset(loc, direction.get()); // reset sign
                             tasks.async().submit(() -> {
                                 val result = dataSource.removeRecord(rec.get()).get();
                                 player.sendMessage(result.reason());
                                 return null;
                             });
+                        } else {
+                            if (conf.get().shopSettings.protectShops) {
+                                event.setCancelled(true);
+                                player.sendMessage(locale.getText("trade.protect"));
+                            }
                         }
                     } else {
                         if (conf.get().shopSettings.protectShops) {
