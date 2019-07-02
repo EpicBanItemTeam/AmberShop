@@ -176,6 +176,7 @@ public class DisplayListener {
         @SneakyThrows
         private void display(ShopRecord record, Player player) {
             val location = record.getLocation();
+            if (!location.getExtent().getUniqueId().equals(player.getWorld().getUniqueId())) return;
             if (!location.getTileEntity().filter(it -> it instanceof Chest).isPresent()) return;
             val block = location.getBlock();
             if (conf.get().shopSettings.displayItem) {
@@ -235,12 +236,12 @@ public class DisplayListener {
         private void resetDisplay(Location<World> location, Direction direction) {
             if (conf.get().shopSettings.displaySign) {
                 val sign = location.add(direction.asBlockOffset());
-                Sponge.getServer().getPlayer(playerUid)
+                Sponge.getServer().getPlayer(playerUid).filter(it -> it.getWorld().getUniqueId().equals(location.getExtent().getUniqueId()))
                         .ifPresent(player -> ((AmberPlayer) player).resetSign(sign));
             }
             if (conf.get().shopSettings.displayItem) {
                 val itemLoc = location.add(0.5, 1.2, 0.5);
-                Sponge.getServer().getPlayer(playerUid)
+                Sponge.getServer().getPlayer(playerUid).filter(it -> it.getWorld().getUniqueId().equals(location.getExtent().getUniqueId()))
                         .ifPresent(player -> ((AmberPlayer) player).resetDroppedItem(itemLoc));
             }
         }
