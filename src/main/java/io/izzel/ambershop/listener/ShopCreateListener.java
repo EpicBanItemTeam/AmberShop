@@ -39,7 +39,7 @@ public class ShopCreateListener {
         if (player.gameMode().get().equals(GameModes.CREATIVE)) return; // as creative players should not create a shop
         if (!player.hasPermission("ambershop.user.create")) return;
         val block = event.getTargetBlock();
-        if (!block.getLocation().flatMap(Location::getTileEntity).filter(it -> it instanceof TileEntityCarrier).isPresent()) // should be a chest
+        if (!block.getLocation().flatMap(Location::getTileEntity).filter(TileEntityCarrier.class::isInstance).isPresent()) // should be a chest
             return;
         val loc = block.getLocation().get();
         if (ds.getByLocation(loc).isPresent()) return;

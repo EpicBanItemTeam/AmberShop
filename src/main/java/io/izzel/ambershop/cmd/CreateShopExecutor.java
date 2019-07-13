@@ -36,7 +36,7 @@ class CreateShopExecutor implements CommandExecutor {
             val player = ((Player) src);
             val opt = Blocks.playerOnCursor(player);
             if (opt.isPresent()) {
-                val te = opt.get().getTileEntity().filter(it -> it instanceof TileEntityCarrier);
+                val te = opt.get().getTileEntity().filter(TileEntityCarrier.class::isInstance);
                 if (te.isPresent()) {
                     val tec = (TileEntityCarrier) te.get();
                     val item = tec.getInventory().peek();

@@ -11,7 +11,7 @@ import io.izzel.ambershop.util.AmberTasks;
 import io.izzel.ambershop.util.Util;
 import lombok.val;
 import org.spongepowered.api.Sponge;
-import org.spongepowered.api.block.BlockTypes;
+import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.entity.living.player.Player;
@@ -26,6 +26,7 @@ import org.spongepowered.api.service.user.UserStorageService;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.action.TextActions;
 import org.spongepowered.api.util.Tristate;
+import org.spongepowered.api.world.Location;
 
 import java.util.concurrent.TimeUnit;
 
@@ -45,8 +46,8 @@ public class ShopTradeListener {
         if (player.gameMode().get().equals(GameModes.CREATIVE)) return; // as creative players should not buy or sell
         val block = event.getTargetBlock();
         val handEmpty = event.getCause().first(DisplayListener.class).isPresent(); // clicking sign do not need empty hand
-        if (block.getState().getType().equals(BlockTypes.CHEST) && (handEmpty ||
-                (!player.getItemInHand(HandTypes.MAIN_HAND).isPresent()) ||
+        if (block.getLocation().flatMap(Location::getTileEntity).filter(TileEntityCarrier.class::isInstance).isPresent() // #10
+                && (handEmpty || (!player.getItemInHand(HandTypes.MAIN_HAND).isPresent()) ||
                 player.getItemInHand(HandTypes.MAIN_HAND).get().getType() == ItemTypes.AIR ||
                 player.getItemInHand(HandTypes.MAIN_HAND).get().getType() == ItemTypes.NONE)
         ) {

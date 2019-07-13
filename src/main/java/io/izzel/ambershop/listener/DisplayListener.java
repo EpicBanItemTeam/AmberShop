@@ -17,6 +17,7 @@ import lombok.var;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.block.tileentity.carrier.Chest;
+import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.entity.living.player.Player;
@@ -177,7 +178,7 @@ public class DisplayListener {
         private void display(ShopRecord record, Player player) {
             val location = record.getLocation();
             if (!location.getExtent().getUniqueId().equals(player.getWorld().getUniqueId())) return;
-            if (!location.getTileEntity().filter(it -> it instanceof Chest).isPresent()) return;
+            if (!location.getTileEntity().filter(TileEntityCarrier.class::isInstance).isPresent()) return; // #10
             val block = location.getBlock();
             if (conf.get().shopSettings.displayItem) {
                 val itemLoc = location.add(0.5, 1.2, 0.5);
