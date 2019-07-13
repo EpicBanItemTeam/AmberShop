@@ -19,7 +19,6 @@ import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.filter.cause.First;
 import org.spongepowered.api.event.filter.type.Include;
 import org.spongepowered.api.item.ItemTypes;
-import org.spongepowered.api.service.ServiceManager;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.TranslatableText;
 import org.spongepowered.api.text.action.TextActions;
@@ -34,7 +33,6 @@ public class ShopCreateListener {
     @Inject private AmberTasks tasks;
     @Inject private AmberConfManager cm;
     @Inject private ShopDataSource ds;
-    @Inject private ServiceManager sm;
 
     @Include(InteractBlockEvent.Primary.class)
     @Listener(order = Order.LAST)
