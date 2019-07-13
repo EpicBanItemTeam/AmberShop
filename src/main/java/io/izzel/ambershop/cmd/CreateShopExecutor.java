@@ -15,10 +15,7 @@ import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.spec.CommandExecutor;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.util.annotation.NonnullByDefault;
-
-import java.util.concurrent.TimeUnit;
 
 @Singleton
 class CreateShopExecutor implements CommandExecutor {
@@ -59,7 +56,7 @@ class CreateShopExecutor implements CommandExecutor {
                                 e.printStackTrace();
                             }
                         });
-                    } else player.sendMessage(locale.getText("commands.create.fail.no-itemName"));
+                    } else player.sendMessage(locale.getText("commands.create.fail.no-item"));
                 } else player.sendMessage(locale.getText("commands.create.fail.not-chest"));
             } else player.sendMessage(locale.getText("commands.create.fail.no-block"));
         } else src.sendMessage(locale.getText("commands.create.fail.player-only"));
