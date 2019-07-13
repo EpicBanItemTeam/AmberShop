@@ -7,6 +7,7 @@ import io.izzel.ambershop.conf.AmberLocale;
 import io.izzel.ambershop.data.ShopDataSource;
 import io.izzel.ambershop.data.ShopRecord;
 import io.izzel.ambershop.util.AmberTasks;
+import io.izzel.ambershop.util.Util;
 import lombok.val;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.data.type.HandTypes;
@@ -18,6 +19,7 @@ import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.filter.cause.First;
 import org.spongepowered.api.event.filter.type.Include;
 import org.spongepowered.api.item.ItemTypes;
+import org.spongepowered.api.service.ServiceManager;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.TranslatableText;
 import org.spongepowered.api.text.action.TextActions;
@@ -32,6 +34,7 @@ public class ShopCreateListener {
     @Inject private AmberTasks tasks;
     @Inject private AmberConfManager cm;
     @Inject private ShopDataSource ds;
+    @Inject private ServiceManager sm;
 
     @Include(InteractBlockEvent.Primary.class)
     @Listener(order = Order.LAST)
@@ -49,20 +52,24 @@ public class ShopCreateListener {
         val item = opt.get().copy();
         item.setQuantity(1);
         tasks.async().submit(() -> {
-            player.sendMessage(locale.getText("trade.input-price.1")
-                    .concat(Text.builder().append(
-                            TranslatableText.of(item.getTranslation()))
-                            .onHover(TextActions.showItem(item.createSnapshot())).build())
-                    .concat(locale.getText("trade.input-price.2")));
-            //todo should have a better api for replacing Text, but later next time
-            val input = tasks.inputNumber(player, cm.get().shopSettings.inputExpireTime, TimeUnit.SECONDS).get();
-            if (input.isPresent()) {
-                val price = input.get();
-                val record = ShopRecord.of(player, loc, price);
-                record.setItemType(item);
-                val csr = ds.addRecord(record).get();
-                player.sendMessage(locale.getText("commands.create.success", csr.id));
-            }
+            val created = ds.getByPlayer(player).get().size();
+            val max = player.getOption("ambershop.max-shop").flatMap(Util::asInteger).orElse(cm.get().shopSettings.maxShops);
+            if (max == -1 || max > created) {
+                player.sendMessage(locale.getText("trade.input-price.1")
+                        .concat(Text.builder().append(
+                                TranslatableText.of(item.getTranslation()))
+                                .onHover(TextActions.showItem(item.createSnapshot())).build())
+                        .concat(locale.getText("trade.input-price.2")));
+                //todo should have a better api for replacing Text, but later next time
+                val input = tasks.inputNumber(player, cm.get().shopSettings.inputExpireTime, TimeUnit.SECONDS).get();
+                if (input.isPresent()) {
+                    val price = input.get();
+                    val record = ShopRecord.of(player, loc, price);
+                    record.setItemType(item);
+                    val csr = ds.addRecord(record).get();
+                    player.sendMessage(locale.getText("commands.create.success", csr.id));
+                }
+            } else player.sendMessage(locale.getText("trade.limit-exceeded"));
             return null;
         });
     }

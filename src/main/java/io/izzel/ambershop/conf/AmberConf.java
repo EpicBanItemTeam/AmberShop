@@ -53,6 +53,11 @@ public class AmberConf {
                 "  &shop_type& for buy or sell(editable)")
         public List<String> signInfo = ImmutableList.of("[AmberShop]", "%shop_type% %shop_item%", "Price: %shop_price%", "Stock: %shop_stock%");
 
+        @Setting(comment = "Set default shop limit player can create.\n" +
+                "You can use \"lp user|group xxx meta set ambershop.max-shop <amount>\" to modify the limit of shops per player/group.\n" +
+                "Set to -1 to disable limit.")
+        public int maxShops = -1;
+
     }
 
 }

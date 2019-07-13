@@ -134,7 +134,7 @@ class ShopDataSourceImpl implements ShopDataSource {
     public Future<List<ShopRecord>> getByUUID(UUID uuid) {
         return tasks.async().submit(() -> {
             @Cleanup val conn = storage.connection();
-            @Cleanup val stmt = conn.prepareStatement("select * from ambershop_shops where owner = ? limit 1;");
+            @Cleanup val stmt = conn.prepareStatement("select * from ambershop_shops where owner = ?;");
             stmt.setString(1, uuid.toString());
             @Cleanup val rs = stmt.executeQuery();
             val builder = ImmutableList.<ShopRecord>builder();
