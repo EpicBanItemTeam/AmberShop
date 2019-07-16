@@ -6,10 +6,11 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import gnu.trove.map.hash.TShortObjectHashMap;
-import io.izzel.ambershop.conf.AmberLocale;
+import io.izzel.amber.commons.i18n.AmberLocale;
 import io.izzel.ambershop.listener.DisplayListener;
 import io.izzel.ambershop.util.AmberTasks;
 import io.izzel.ambershop.util.Blocks;
+import io.izzel.ambershop.util.OperationResult;
 import lombok.Cleanup;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -44,67 +45,67 @@ class ShopDataSourceImpl implements ShopDataSource {
     @Override
     public void init() {
         storage.init();
-        locale.info("shop-loaded");
+        locale.log("shop-loaded");
     }
 
     @Override
-    public Future<OperateResult> removeRecord(ShopRecord record) {
+    public Future<OperationResult> removeRecord(ShopRecord record) {
         return tasks.async().submit(() -> {
             try (val conn = storage.connection();
                  val stmt = conn.prepareStatement("delete from ambershop_shops where id = ?;")) {
 
                 stmt.setInt(1, record.id);
                 if (stmt.executeUpdate() == 0) {
-                    return new ResultFail(locale.getText("shop-delete-nothing"));
+                    return OperationResult.of("shop-delete-nothing");
                 }
 
                 tasks.sync().submit(() -> {
                     chunk(record.world, record.x >> 4, record.z >> 4)
-                            .remove(Blocks.toShort(record.x, record.y, record.z));
+                        .remove(Blocks.toShort(record.x, record.y, record.z));
                 });
 
-                return new ResultSuccess(locale.getText("shop-deleted"));
+                return OperationResult.of("shop-deleted");
             } catch (Exception e) {
-                return new ResultFail(locale.getText("sql-error", e));
+                return OperationResult.of("sql-error", e);
             }
         });
     }
 
     @Override
-    public Future<OperateResult> updateRecord(ShopRecord newRec) {
+    public Future<OperationResult> updateRecord(ShopRecord newRec) {
         return tasks.async().submit(() -> {
             try (val conn = storage.connection();
                  val stmt = conn.prepareStatement(
-                         "update ambershop_shops " +
-                                 "set create_time = ?," +
-                                 "    owner       = ?," +
-                                 "    world       = ?," +
-                                 "    chunk       = ?," +
-                                 "    pos         = ?," +
-                                 "    price       = ?," +
-                                 "    meta        = ?" +
-                                 "where id = ?;")) {
+                     "update ambershop_shops " +
+                         "set create_time = ?," +
+                         "    owner       = ?," +
+                         "    world       = ?," +
+                         "    chunk       = ?," +
+                         "    pos         = ?," +
+                         "    price       = ?," +
+                         "    meta        = ?" +
+                         "where id = ?;")) {
                 newRec.writeResultSet(stmt);
                 stmt.setInt(8, newRec.id);
                 if (stmt.executeUpdate() == 0) {
-                    return new ResultFail(locale.getText("shop-update-nothing"));
+                    return OperationResult.of("shop-update-nothing");
                 }
 
                 tasks.sync().submit(() -> {
                     chunk(newRec.world, newRec.x >> 4, newRec.z >> 4)
-                            .put(Blocks.toShort(newRec.x, newRec.y, newRec.z), newRec);
+                        .put(Blocks.toShort(newRec.x, newRec.y, newRec.z), newRec);
                     signDisplay.addBlockChange(newRec);
                 });
 
-                return new ResultSuccess(locale.getText("shop-updated"));
+                return OperationResult.of("shop-updated");
             } catch (Exception e) {
-                return new ResultFail(locale.getText("sql-error", e));
+                return OperationResult.of("sql-error", e);
             }
         });
     }
 
     @Override
-    public Future<OperateResult> moveLocation(ShopRecord old, Location<World> dest) {
+    public Future<OperationResult> moveLocation(ShopRecord old, Location<World> dest) {
         chunk(old.world, old.x >> 4, old.z >> 4).remove(Blocks.toShort(old.x, old.y, old.z));
         old.x = dest.getBlockX();
         old.y = dest.getBlockY();
@@ -114,8 +115,18 @@ class ShopDataSourceImpl implements ShopDataSource {
     }
 
     @Override
-    public Future<List<ShopRecord>> fetchRecordBy(Map<String, String> map) {
-        return Futures.immediateCheckedFuture(ImmutableList.of());
+    public Future<List<ShopRecord>> fetchRecordBy(List<String> map) {
+        return tasks.async().submit(() -> {
+            val sql = "select * from ambershop_shops where " + String.join(" and ", map);
+            @Cleanup val conn = storage.connection();
+            @Cleanup val stmt = conn.createStatement();
+            @Cleanup val rs = stmt.executeQuery(sql);
+            val builder = ImmutableList.<ShopRecord>builder();
+            while (rs.next()) {
+                builder.add(ShopRecord.readResultSet(rs));
+            }
+            return builder.build();
+        });
     }
 
     @SneakyThrows
@@ -123,11 +134,11 @@ class ShopDataSourceImpl implements ShopDataSource {
     public Optional<ShopRecord> getByLocation(Location<World> loc) {
         if (Sponge.getServer().isMainThread())
             return Optional.ofNullable(chunk(loc.getExtent().getUniqueId(), loc.getBlockX() >> 4, loc.getBlockZ() >> 4)
-                    .get(Blocks.toShort(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ())));
+                .get(Blocks.toShort(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ())));
         else
             return Optional.ofNullable(tasks.sync().submit(() -> chunk(loc.getExtent().getUniqueId(),
-                    loc.getBlockX() >> 4, loc.getBlockZ() >> 4)
-                    .get(Blocks.toShort(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()))).get());
+                loc.getBlockX() >> 4, loc.getBlockZ() >> 4)
+                .get(Blocks.toShort(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()))).get());
     }
 
     @Override
@@ -163,9 +174,9 @@ class ShopDataSourceImpl implements ShopDataSource {
         return tasks.async().submit(() -> {
             @Cleanup val conn = storage.connection();
             @Cleanup val stmt = conn.prepareStatement(
-                    "insert into ambershop_shops (create_time, owner, world, chunk, pos, price, meta) " +
-                            "values (?, ?, ?, ?, ?, ?, ?);",
-                    Statement.RETURN_GENERATED_KEYS);
+                "insert into ambershop_shops (create_time, owner, world, chunk, pos, price, meta) " +
+                    "values (?, ?, ?, ?, ?, ?, ?);",
+                Statement.RETURN_GENERATED_KEYS);
             rec.writeResultSet(stmt);
             stmt.executeUpdate();
             @Cleanup val rs = stmt.getGeneratedKeys();
@@ -189,8 +200,8 @@ class ShopDataSourceImpl implements ShopDataSource {
         return tasks.async().submit(() -> {
             @Cleanup val conn = storage.connection();
             @Cleanup val stmt = conn.prepareStatement(
-                    "select * from ambershop_shops where chunk = ?;",
-                    Statement.RETURN_GENERATED_KEYS);
+                "select * from ambershop_shops where chunk = ?;",
+                Statement.RETURN_GENERATED_KEYS);
             stmt.setLong(1, chunk);
             @Cleanup val rs = stmt.executeQuery();
             val map = new TShortObjectHashMap<ShopRecord>();

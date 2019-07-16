@@ -1,6 +1,7 @@
 package io.izzel.ambershop.trade;
 
 import io.izzel.ambershop.util.Inventories;
+import io.izzel.ambershop.util.OperationResult;
 import io.izzel.ambershop.util.Util;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
@@ -28,19 +29,21 @@ public class UnlimitedShopTrading implements Trading {
     private final boolean sell;
 
     @Override
-    public TransactionResult performTransaction() {
+    public OperationResult performTransaction() {
         if (sell) {
-            if (Inventories.count(playerInv, type) < count) return TransactionResult.SOLD_OUT;
+            if (Inventories.count(playerInv, type) < count)
+                return OperationResult.fail("trade.transaction-results.sold-out");
             val r = Util.performEconomy(playerAccount, BigDecimal.valueOf(price).multiply(BigDecimal.valueOf(count)), false);
-            if (r.rollback) return r;
+            if (r.isFail()) return r;
             Inventories.take(playerInv, count, type);
         } else {
-            if (Inventories.empty(playerInv, type) < count) return TransactionResult.INVENTORY_FULL;
+            if (Inventories.empty(playerInv, type) < count)
+                return OperationResult.fail("trade.transaction-results.inventory-full");
             val r = Util.performEconomy(playerAccount, BigDecimal.valueOf(price).multiply(BigDecimal.valueOf(count)), true);
-            if (r.rollback) return r;
+            if (r.isFail()) return r;
             provide(count).forEach(playerInv::offer);
         }
-        return TransactionResult.SUCCESS;
+        return OperationResult.of("trade.transaction-results.success");
     }
 
     private List<ItemStack> provide(int amount) {

@@ -2,8 +2,8 @@ package io.izzel.ambershop.util;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.izzel.amber.commons.i18n.AmberLocale;
 import io.izzel.ambershop.AmberShop;
-import io.izzel.ambershop.conf.AmberLocale;
 import io.izzel.ambershop.listener.OneTimeChatListener;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -49,11 +49,11 @@ public class AmberTasks {
 
 
     public <V> Future<V> input(Player player, long timeout, TimeUnit unit, Function<Optional<String>, ? extends V> mapper) {
-        return Util.mapFuture(inputChat(player, timeout, unit, s -> true, p -> {}, p -> p.sendMessage(locale.getText("trade.expire"))), mapper);
+        return Util.mapFuture(inputChat(player, timeout, unit, s -> true, p -> {}, p -> locale.to(p, "trade.expire")), mapper);
     }
 
     public <V> Future<V> input(Player player, long timeout, TimeUnit unit, Predicate<String> predicate, Consumer<Player> consumer, Function<Optional<String>, ? extends V> mapper) {
-        return Util.mapFuture(inputChat(player, timeout, unit, predicate, consumer, p -> p.sendMessage(locale.getText("trade.expire"))), mapper);
+        return Util.mapFuture(inputChat(player, timeout, unit, predicate, consumer, p -> locale.to(p, "trade.expire")), mapper);
     }
 
     public <V> Future<V> input(Player player, long timeout, TimeUnit unit, Predicate<String> predicate, Consumer<Player> consumer, Consumer<Player> onTimeout, Function<Optional<String>, ? extends V> mapper) {
@@ -61,12 +61,12 @@ public class AmberTasks {
     }
 
     public Future<Optional<Double>> inputNumber(Player player, long timeout, TimeUnit unit) {
-        return inputNumber(player, timeout, unit, p -> p.sendMessage(locale.getText("trade.expire")));
+        return inputNumber(player, timeout, unit, p -> locale.to(p, "trade.expire"));
     }
 
     public Future<Optional<Double>> inputNumber(Player player, long timeout, TimeUnit unit, Consumer<Player> onTimeout) {
         return Util.mapFuture(inputChat(player, timeout, unit,
-                Util::isDouble, p -> p.sendMessage(locale.getText("trade.format-err")), onTimeout), it -> it.flatMap(Util::asDouble));
+            Util::isDouble, p -> locale.to(p, "trade.format-err"), onTimeout), it -> it.flatMap(Util::asDouble));
     }
 
     public Future<Optional<String>> inputChat(Player player, long timeout, TimeUnit unit) {
@@ -74,7 +74,7 @@ public class AmberTasks {
     }
 
     public Future<Optional<String>> inputChat(Player player, long timeout, TimeUnit unit, Predicate<String> predicate, Consumer<Player> consumer) {
-        return inputChat(player, timeout, unit, predicate, consumer, p -> p.sendMessage(locale.getText("trade.expire")));
+        return inputChat(player, timeout, unit, predicate, consumer, p -> locale.to(p, "trade.expire"));
     }
 
     /**

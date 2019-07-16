@@ -12,20 +12,21 @@ buildscript {
     }
     dependencies {
         classpath "net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT"
-        classpath 'org.spongepowered:mixingradle:0.6-SNAPSHOT'
     }
 }
 
 plugins {
+    id 'java'
+    id 'idea'
     id 'org.spongepowered.plugin' version '0.8.1'
     id 'com.github.johnrengelman.shadow' version '4.0.4'
 }
-apply plugin: 'signing'
 apply plugin: "net.minecraftforge.gradle.forge"
-apply plugin: 'org.spongepowered.mixin'
+def ci = System.getenv().containsKey('CI')
+if (!ci) apply plugin: 'signing'
 
 group = 'io.izzel.ambershop'
-version = '1.0.4'
+version = '1.0.4' + (ci ? "-ci-${System.getenv('APPVEYOR_REPO_COMMIT').substring(0, 8)}" : '')
 
 minecraft {
     version = '1.12.2-14.23.5.2768'
@@ -38,14 +39,18 @@ repositories {
         name = 'bstats-repo'
         url = 'http://repo.bstats.org/content/repositories/releases'
     }
+    maven {
+        name = 'jitpack'
+        url = 'https://jitpack.io'
+    }
 }
 
 dependencies {
     compile group: 'net.sf.trove4j', name: 'trove4j', version: '3.0.3'
     compile 'org.bstats:bstats-sponge:1.2'
+    compile 'com.github.IzzelAliz:AmberCommon:master-SNAPSHOT'
     shadow 'org.spongepowered:spongeapi:7.1.0'
     shadow 'org.spongepowered:spongecommon:7.1.0:dev'
-    shadow 'org.spongepowered:mixin:0.7.11-SNAPSHOT'
     shadow 'org.projectlombok:lombok:1.18.2'
     shadow group: 'io.netty', name: 'netty-buffer', version: '4.1.9.Final'
 }
@@ -67,27 +72,25 @@ shadowJar {
     afterEvaluate {
         from zipTree(reobfJar.jar)
     }
+
+    dependencies {
+        it.include it.dependency('net.sf.trove4j:.*')
+        it.include it.dependency('org.bstats:.*')
+        it.include it.dependency('com.github.IzzelAliz:.*')
+    }
+
     relocate 'org.bstats', 'io.izzel.ambershop.internal.org.bstats'
     relocate 'gnu.trove', 'io.izzel.ambershop.internal.gnu.trove'
     exclude 'dummyThing', 'META-INF/fml_cache_annotation.json', 'META-INF/fml_cache_class_versions.json'
-    append 'mixins.ambershop.refmap.json'
 }
 
-signing {
-    useGpgCmd()
-    sign jar, shadowJar, sourceJar
-}
-
-mixin {
-    add sourceSets.main, 'mixins.ambershop.refmap.json'
+if (!ci) {
+    signing {
+        useGpgCmd()
+        sign jar, shadowJar, sourceJar
+    }
 }
 
 jar {
-    manifest.attributes(
-            'TweakClass': 'org.spongepowered.asm.launch.MixinTweaker',
-            'MixinConfigs': 'mixins.ambershop.json',
-            'FMLCorePluginContainsFMLMod': 'true',
-            'ForceLoadAsMod': 'true'
-    )
     from 'LICENSE'
 }

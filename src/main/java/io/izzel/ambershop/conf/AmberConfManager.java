@@ -16,10 +16,7 @@ import java.util.Objects;
 @Singleton
 public class AmberConfManager {
 
-    @Inject
-    @DefaultConfig(sharedRoot = false)
-    private Path cp;
-
+    @Inject @DefaultConfig(sharedRoot = false) private Path cp;
     @Inject private Logger logger;
 
     private AmberConf conf;

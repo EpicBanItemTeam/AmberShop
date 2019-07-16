@@ -2,8 +2,8 @@ package io.izzel.ambershop.listener;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.izzel.amber.commons.i18n.AmberLocale;
 import io.izzel.ambershop.conf.AmberConfManager;
-import io.izzel.ambershop.conf.AmberLocale;
 import io.izzel.ambershop.data.ShopDataSource;
 import io.izzel.ambershop.data.ShopRecord;
 import io.izzel.ambershop.util.AmberTasks;
@@ -19,9 +19,6 @@ import org.spongepowered.api.event.block.InteractBlockEvent;
 import org.spongepowered.api.event.filter.cause.First;
 import org.spongepowered.api.event.filter.type.Include;
 import org.spongepowered.api.item.ItemTypes;
-import org.spongepowered.api.text.Text;
-import org.spongepowered.api.text.TranslatableText;
-import org.spongepowered.api.text.action.TextActions;
 import org.spongepowered.api.world.Location;
 
 import java.util.concurrent.TimeUnit;
@@ -53,21 +50,16 @@ public class ShopCreateListener {
             val created = ds.getByPlayer(player).get().size();
             val max = player.getOption("ambershop.max-shop").flatMap(Util::asInteger).orElse(cm.get().shopSettings.maxShops);
             if (max == -1 || max > created) {
-                player.sendMessage(locale.getText("trade.input-price.1")
-                        .concat(Text.builder().append(
-                                TranslatableText.of(item.getTranslation()))
-                                .onHover(TextActions.showItem(item.createSnapshot())).build())
-                        .concat(locale.getText("trade.input-price.2")));
-                //todo should have a better api for replacing Text, but later next time
+                locale.to(player, "trade.input-price", item);
                 val input = tasks.inputNumber(player, cm.get().shopSettings.inputExpireTime, TimeUnit.SECONDS).get();
                 if (input.isPresent()) {
                     val price = input.get();
                     val record = ShopRecord.of(player, loc, price);
                     record.setItemType(item);
                     val csr = ds.addRecord(record).get();
-                    player.sendMessage(locale.getText("commands.create.success", csr.id));
+                    locale.to(player, "commands.create.success", csr.id);
                 }
-            } else player.sendMessage(locale.getText("trade.limit-exceeded"));
+            } else locale.to(player, "trade.limit-exceeded");
             return null;
         });
     }

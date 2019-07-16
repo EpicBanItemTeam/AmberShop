@@ -3,17 +3,15 @@ package io.izzel.ambershop.util;
 import com.google.gson.JsonParser;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.izzel.amber.commons.i18n.AmberLocale;
 import io.izzel.ambershop.AmberShop;
-import io.izzel.ambershop.conf.AmberLocale;
 import lombok.val;
 import org.spongepowered.api.Sponge;
-import org.spongepowered.api.text.Text;
 
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Singleton
 public class Updater implements Runnable {
@@ -36,11 +34,10 @@ public class Updater implements Runnable {
             val releaseUrl = node.get("html_url").getAsString();
             val newVer = node.get("tag_name").getAsString();
             val releaseDate = node.get("published_at").getAsString();
-            val curVer = Sponge.getPluginManager().fromInstance(AmberShop.SINGLETON).get().getVersion().get();
+            val curVer = Sponge.getPluginManager().fromInstance(AmberShop.SINGLETON).orElseThrow(IllegalStateException::new)
+                .getVersion().orElseThrow(IllegalStateException::new);
             if (!curVer.equals(newVer)) {
-                val list = locale.getStringList("updater").stream().map(it -> Util.replace(it, newVer, releaseDate, releaseUrl))
-                        .map(Text::of).collect(Collectors.toList());
-                list.forEach(Sponge.getServer().getConsole()::sendMessage);
+                locale.log("updater", newVer, releaseDate, releaseUrl);
             }
         } catch (Throwable ignored) {
         }

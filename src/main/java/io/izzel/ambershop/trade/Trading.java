@@ -1,15 +1,18 @@
 package io.izzel.ambershop.trade;
 
+import io.izzel.ambershop.util.OperationResult;
+
 import java.util.function.Supplier;
 
-public interface Trading extends Supplier<TransactionResult> {
+public interface Trading extends Supplier<OperationResult> {
+
     /**
      * @return result and text.
      */
-    TransactionResult performTransaction();
+    OperationResult performTransaction();
 
     @Override
-    default TransactionResult get() {
+    default OperationResult get() {
         return performTransaction();
     }
 }

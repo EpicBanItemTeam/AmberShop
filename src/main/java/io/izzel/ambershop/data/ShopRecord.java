@@ -15,7 +15,9 @@ import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.UUID;
@@ -54,8 +56,17 @@ public final class ShopRecord {
     }
 
     public int getStock() {
-        return getLocation().getTileEntity().map(it ->
-                Inventories.count(((TileEntityCarrier) it).getInventory(), itemType.createStack())).orElse(0);
+        return getLocation().getTileEntity()
+            .filter(TileEntityCarrier.class::isInstance)
+            .map(TileEntityCarrier.class::cast)
+            .map(TileEntityCarrier::getInventory)
+            .map(it -> {
+                if (price > 0) {
+                    return Inventories.count(it, itemType.createStack());
+                } else {
+                    return Inventories.empty(it, itemType.createStack());
+                }
+            }).orElse(0);
     }
 
     @SneakyThrows
@@ -75,6 +86,7 @@ public final class ShopRecord {
     @SneakyThrows
     private void readMeta() {
         val buf = Unpooled.wrappedBuffer(meta);
+        @SuppressWarnings("UnusedAssignment")
         var id = 0;
         while ((id = buf.readShort()) != 0) {
             switch (id) {
@@ -115,15 +127,15 @@ public final class ShopRecord {
         val pos = rs.getShort("pos");
         val coord = Blocks.coord(chunk, pos);
         val rec = new ShopRecord(
-                rs.getInt("id"),
-                rs.getLong("create_time"),
-                UUID.fromString(rs.getString("owner")),
-                UUID.fromString(rs.getString("world")),
-                coord[0],
-                coord[1],
-                coord[2],
-                rs.getDouble("price"),
-                ByteStreams.toByteArray(rs.getBlob("meta").getBinaryStream())
+            rs.getInt("id"),
+            rs.getLong("create_time"),
+            UUID.fromString(rs.getString("owner")),
+            UUID.fromString(rs.getString("world")),
+            coord[0],
+            coord[1],
+            coord[2],
+            rs.getDouble("price"),
+            ByteStreams.toByteArray(rs.getBlob("meta").getBinaryStream())
         );
         rec.readMeta();
         return rec;
@@ -131,14 +143,14 @@ public final class ShopRecord {
 
     public static ShopRecord of(Player player, Location<World> location, double price) {
         return new ShopRecord(-1,
-                System.currentTimeMillis(),
-                player.getUniqueId(),
-                location.getExtent().getUniqueId(),
-                location.getBlockX(),
-                location.getBlockY(),
-                location.getBlockZ(),
-                price,
-                new byte[0]
+            System.currentTimeMillis(),
+            player.getUniqueId(),
+            location.getExtent().getUniqueId(),
+            location.getBlockX(),
+            location.getBlockY(),
+            location.getBlockZ(),
+            price,
+            new byte[0]
         );
     }
 

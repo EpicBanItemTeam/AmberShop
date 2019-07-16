@@ -2,7 +2,7 @@ package io.izzel.ambershop.cmd;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.izzel.ambershop.conf.AmberLocale;
+import io.izzel.amber.commons.i18n.AmberLocale;
 import io.izzel.ambershop.data.ShopDataSource;
 import io.izzel.ambershop.util.AmberTasks;
 import io.izzel.ambershop.util.Blocks;
@@ -33,16 +33,16 @@ public class SetPriceExecutor implements CommandExecutor {
             if (opt.isPresent()) {
                 val rec = opt.get();
                 if (rec.owner.equals(player.getUniqueId()) ? player.hasPermission("ambershop.user.setprice")
-                        : player.hasPermission("ambershop.admin.setprice")) {
+                    : player.hasPermission("ambershop.admin.setprice")) {
                     rec.setPrice(price);
                     tasks.async().submit(() -> {
                         val result = ds.updateRecord(rec).get();
-                        player.sendMessage(result.reason());
+                        locale.to(player, result.getPath(), result.getArgs());
                         return null;
                     });
-                } else player.sendMessage(locale.getText("commands.setprice.fail.no-perm"));
-            } else player.sendMessage(locale.getText("commands.setprice.fail.no-shop"));
-        } else src.sendMessage(locale.getText("commands.setprice.fail.player-only"));
+                } else locale.to(player, "commands.setprice.fail.no-perm");
+            } else locale.to(player, "commands.setprice.fail.no-shop");
+        } else locale.to(src, "commands.setprice.fail.player-only");
         return CommandResult.success();
     }
 

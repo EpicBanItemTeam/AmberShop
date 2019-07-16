@@ -1,6 +1,7 @@
 package io.izzel.ambershop.trade;
 
 import io.izzel.ambershop.util.Inventories;
+import io.izzel.ambershop.util.OperationResult;
 import io.izzel.ambershop.util.Util;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
@@ -27,16 +28,18 @@ class PlayerShopTrading implements Trading {
     private final ItemStack type;
 
     @Override
-    public TransactionResult performTransaction() {
-        if (Inventories.count(fromInv, type) < count) return TransactionResult.SOLD_OUT;
-        if (Inventories.empty(toInv, type) < count) return TransactionResult.INVENTORY_FULL;
+    public OperationResult performTransaction() {
+        if (Inventories.count(fromInv, type) < count)
+            return OperationResult.fail("trade.transaction-results.sold-out");
+        if (Inventories.empty(toInv, type) < count)
+            return OperationResult.fail("trade.transaction-results.inventory-full");
         val items = Inventories.take(fromInv, count, type);
 
         val price = BigDecimal.valueOf(count).multiply(BigDecimal.valueOf(this.price));
         var sr = Util.performEconomy(fromAccount, price, false);
-        if (sr.rollback) return sr;
+        if (sr.isFail()) return sr;
         var cr = Util.performEconomy(toAccount, price, true);
-        if (cr.rollback) {
+        if (cr.isFail()) {
             Util.performEconomy(fromAccount, price, true);
             return cr;
         }
@@ -51,18 +54,18 @@ class PlayerShopTrading implements Trading {
             if (item.getQuantity() == 0) iterator.remove();
         }
 
-        if (success == count || items.isEmpty()) return TransactionResult.SUCCESS;
+        if (success == count || items.isEmpty()) return OperationResult.of("trade.transaction-results.success");
 
         // usually cannot happen, just in case
         val refund = BigDecimal.valueOf(count - success).multiply(BigDecimal.valueOf(this.price));
         sr = Util.performEconomy(fromAccount, refund, true);
-        if (sr.rollback) return sr;
+        if (sr.isFail()) return sr;
         cr = Util.performEconomy(toAccount, refund, false);
-        if (cr.rollback) return cr;
+        if (cr.isFail()) return cr;
 
         items.forEach(fromInv::offer);
 
-        return TransactionResult.SUCCESS;
+        return OperationResult.of("trade.transaction-results.success");
     }
 
 }

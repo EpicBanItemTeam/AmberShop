@@ -2,8 +2,9 @@ package io.izzel.ambershop.listener;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.izzel.amber.commons.i18n.AmberLocale;
+import io.izzel.amber.commons.i18n.args.Arg;
 import io.izzel.ambershop.conf.AmberConfManager;
-import io.izzel.ambershop.conf.AmberLocale;
 import io.izzel.ambershop.data.ShopDataSource;
 import io.izzel.ambershop.data.ShopRecord;
 import io.izzel.ambershop.trade.Trades;
@@ -12,7 +13,6 @@ import io.izzel.ambershop.util.Util;
 import lombok.val;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
-import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.living.player.gamemode.GameModes;
@@ -22,9 +22,6 @@ import org.spongepowered.api.event.filter.IsCancelled;
 import org.spongepowered.api.event.filter.cause.First;
 import org.spongepowered.api.event.filter.type.Include;
 import org.spongepowered.api.item.ItemTypes;
-import org.spongepowered.api.service.user.UserStorageService;
-import org.spongepowered.api.text.Text;
-import org.spongepowered.api.text.action.TextActions;
 import org.spongepowered.api.util.Tristate;
 import org.spongepowered.api.world.Location;
 
@@ -47,92 +44,52 @@ public class ShopTradeListener {
         val block = event.getTargetBlock();
         val handEmpty = event.getCause().first(DisplayListener.class).isPresent(); // clicking sign do not need empty hand
         if (block.getLocation().flatMap(Location::getTileEntity).filter(TileEntityCarrier.class::isInstance).isPresent() // #10
-                && (handEmpty || (!player.getItemInHand(HandTypes.MAIN_HAND).isPresent()) ||
-                player.getItemInHand(HandTypes.MAIN_HAND).get().getType() == ItemTypes.AIR ||
-                player.getItemInHand(HandTypes.MAIN_HAND).get().getType() == ItemTypes.NONE)
+            && (handEmpty || (!player.getItemInHand(HandTypes.MAIN_HAND).isPresent()) ||
+            player.getItemInHand(HandTypes.MAIN_HAND).get().getType() == ItemTypes.AIR ||
+            player.getItemInHand(HandTypes.MAIN_HAND).get().getType() == ItemTypes.NONE)
         ) {
             val location = block.getLocation();
             if (!location.isPresent()) return;
             ds.getByLocation(location.get()).ifPresent(rec -> tasks.async().submit(() -> {
-                locale.shopInfo(rec).forEach(player::sendMessage);
+                locale.to(player, "trade.shop-info", Arg.user(rec.owner), rec.getItemType(), rec.getStock(), rec.getPrice(),
+                    Arg.ref(rec.price < 0 ? "trade.types.sell" : "trade.types.buy"));
                 if (!player.getUniqueId().equals(rec.owner)) {
-                    player.sendMessage(locale.getText(rec.price < 0 ? "trade.input-sell" : "trade.input-buy"));
+                    locale.to(player, rec.price < 0 ? "trade.input-sell" : "trade.input-buy");
                     val opt = tasks.inputChat(player, cm.get().shopSettings.inputExpireTime, TimeUnit.SECONDS,
-                            Util::isInteger, p -> p.sendMessage(locale.getText("trade.format-err"))).get()
-                            .flatMap(Util::asInteger);
-                    if (!opt.isPresent()) {
-                        player.sendMessage(locale.getText("trade.expire"));
-                    } else {
+                        Util::isInteger, p -> locale.to(p, "trade.format-err")).get()
+                        .flatMap(Util::asInteger);
+                    if (opt.isPresent()) {
                         val num = opt.get();
-                        if (num <= 0) {
-                            player.sendMessage(locale.getText("trade.non-negative"));
-                            return null;
-                        }
-                        val text = Trades.playerShopTrade(player, rec, num, rec.price < 0).performTransaction().text;
-                        player.sendMessage(locale.getText(text));
-                        display.addBlockChange(rec);
-                    }
-                } else {
-                    player.sendMessage(manage(rec));
-                }
+                        if (num > 0) {
+                            val result = Trades.playerShopTrade(player, rec, num, rec.price < 0).performTransaction();
+                            locale.to(player, result.getPath(), result.getArgs());
+                            display.addBlockChange(rec);
+                        } else locale.to(player, "trade.non-negative");
+                    } else locale.to(player, "trade.expire");
+                } else manage(player, rec);
                 return null;
             }));
         }
     }
 
-    private Text manage(ShopRecord record) {
-        val builder = Text.builder();
-        builder.append(Text.builder().append(locale.getText("trade.manage.remove")).onClick(TextActions.executeCallback(cs -> {
-            if (cs.hasPermission("ambershop.user.remove")) {
-                record.getLocation().getBlock().get(Keys.DIRECTION).ifPresent(direction -> display.reset(record.getLocation(), direction));
-                tasks.async().submit(() -> {
-                    cs.sendMessage(ds.removeRecord(record).get().reason());
-                    return null;
-                });
-            }
-        })).build());
-        builder.append(Text.of(" "));
-        builder.append(Text.builder().append(locale.getText("trade.manage.setprice")).onClick(TextActions.executeCallback(cs -> {
-            if (cs instanceof Player && cs.hasPermission("ambershop.user.setprice")) tasks.async().submit(() -> {
-                cs.sendMessage(locale.getText("trade.manage.setprice-input"));
-                val input = tasks.inputNumber(((Player) cs), cm.get().shopSettings.inputExpireTime, TimeUnit.SECONDS).get();
-                if (input.isPresent()) {
-                    val num = input.get();
-                    record.setPrice(num);
-                    cs.sendMessage(ds.updateRecord(record).get().reason());
-                }
+    private void manage(Player player, ShopRecord record) {
+        locale.to(player, "trade.manage.info", record.id, -record.price, Arg.ref("trade.manage.button.price").withCallback(cs -> {
+            if (cs.hasPermission("ambershop.user.setprice")) tasks.async().submit(() -> {
+                locale.to(cs, "trade.manage.input.price");
+                tasks.inputNumber(((Player) cs), cm.get().shopSettings.inputExpireTime, TimeUnit.SECONDS).get()
+                    .ifPresent(aDouble -> tasks.sync().execute(() -> Sponge.getCommandManager()
+                        .process(cs, String.format("ambershop query -q -id %s -s -p %s", record.id, aDouble))));
                 return null;
             });
-        })).build());
-        builder.append(Text.of(" "));
-        builder.append(Text.builder().append(locale.getText("trade.manage.setowner")).onClick(TextActions.executeCallback(cs -> {
-            if (cs instanceof Player && cs.hasPermission("ambershop.user.setowner")) tasks.async().submit(() -> {
-                cs.sendMessage(locale.getText("trade.manage.setowner-input"));
-                val input = tasks.input(((Player) cs), cm.get().shopSettings.inputExpireTime, TimeUnit.SECONDS,
-                        s -> {
-                            val user = Sponge.getServiceManager().provideUnchecked(UserStorageService.class).get(s);
-                            return user.isPresent() && user.get().hasPermission("ambershop.user.create");
-                        }, p -> p.sendMessage(locale.getText("commands.setowner.fail.no-perm")),
-                        s -> s.flatMap(name -> Sponge.getServiceManager().provideUnchecked(UserStorageService.class).get(name))).get();
-                if (input.isPresent()) {
-                    val user = input.get();
-                    if (user.hasPermission("ambershop.user.create")) {
-                        record.setOwner(user.getUniqueId());
-                        cs.sendMessage(ds.updateRecord(record).get().reason());
-                    } else cs.sendMessage(locale.getText("commands.setowner.fail.no-perm"));
-                }
+        }), Arg.ref("trade.manage.button.owner").withCallback(cs -> {
+            if (cs.hasPermission("ambershop.user.setowner")) tasks.async().submit(() -> {
+                locale.to(cs, "trade.manage.input.owner");
+                tasks.inputChat(((Player) cs), cm.get().shopSettings.inputExpireTime, TimeUnit.SECONDS).get()
+                    .ifPresent(s -> tasks.sync().execute(() -> Sponge.getCommandManager()
+                        .process(cs, String.format("ambershop query -q -id %s -s -o %s", record.id, s))));
                 return null;
             });
-        })).build());
-        builder.append(Text.of(" "));
-        builder.append(Text.builder().append(locale.getText("trade.manage.setunlimited")).onClick(TextActions.executeCallback(cs -> {
-            if (cs instanceof Player && cs.hasPermission("ambershop.admin.unlimited")) tasks.async().submit(() -> {
-                record.setUnlimited(!record.isUnlimited());
-                cs.sendMessage(ds.updateRecord(record).get().reason());
-                return null;
-            });
-        })).build());
-        return builder.build();
+        }), player.hasPermission("ambershop.admin.unlimited") ? Arg.ref("trade.manage.button.unlimited") : "", !record.isUnlimited());
     }
 
 }

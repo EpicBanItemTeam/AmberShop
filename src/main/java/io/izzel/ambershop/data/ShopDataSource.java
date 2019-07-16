@@ -1,11 +1,15 @@
 package io.izzel.ambershop.data;
 
 import com.google.inject.ImplementedBy;
+import io.izzel.ambershop.util.OperationResult;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.Future;
 
 @ImplementedBy(ShopDataSourceImpl.class)
@@ -13,13 +17,13 @@ public interface ShopDataSource {
 
     void init();
 
-    Future<OperateResult> removeRecord(ShopRecord record);
+    Future<OperationResult> removeRecord(ShopRecord record);
 
-    Future<OperateResult> updateRecord(ShopRecord newRec);
+    Future<OperationResult> updateRecord(ShopRecord newRec);
 
-    Future<OperateResult> moveLocation(ShopRecord old, Location<World> dest);
+    Future<OperationResult> moveLocation(ShopRecord old, Location<World> dest);
 
-    Future<List<ShopRecord>> fetchRecordBy(Map<String, String> map);
+    Future<List<ShopRecord>> fetchRecordBy(List<String> map);
 
     Optional<ShopRecord> getByLocation(Location<World> location);
 

@@ -1,7 +1,5 @@
 package io.izzel.ambershop.listener;
 
-import io.izzel.ambershop.AmberShop;
-import io.izzel.ambershop.conf.AmberLocale;
 import io.izzel.ambershop.util.ProvidingFutureTask;
 import lombok.val;
 import org.spongepowered.api.Sponge;

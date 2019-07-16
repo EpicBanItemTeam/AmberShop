@@ -75,8 +75,8 @@ public class Inventories {
 
     public Inventory getMainInventory(Player player) {
         return player.getInventory()
-                .query(QueryOperationTypes.INVENTORY_TYPE.of(MainPlayerInventory.class))
-                .transform(InventoryTransformations.PLAYER_MAIN_HOTBAR_FIRST);
+            .query(QueryOperationTypes.INVENTORY_TYPE.of(MainPlayerInventory.class))
+            .transform(InventoryTransformations.PLAYER_MAIN_HOTBAR_FIRST);
     }
 
 }

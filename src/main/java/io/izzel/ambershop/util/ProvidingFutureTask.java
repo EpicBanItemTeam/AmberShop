@@ -3,7 +3,9 @@ package io.izzel.ambershop.util;
 import org.spongepowered.api.util.annotation.NonnullByDefault;
 
 import java.util.Optional;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 
 @NonnullByDefault
 public class ProvidingFutureTask<T> extends FutureTask<Optional<T>> {
@@ -22,12 +24,12 @@ public class ProvidingFutureTask<T> extends FutureTask<Optional<T>> {
     }
 
     @Override
-    public Optional<T> get() throws InterruptedException, ExecutionException {
+    public Optional<T> get() throws InterruptedException {
         return Optional.ofNullable(queue.poll(timeout, unit));
     }
 
     @Override
-    public Optional<T> get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+    public Optional<T> get(long timeout, TimeUnit unit) throws InterruptedException {
         return Optional.ofNullable(queue.poll(timeout, unit));
     }
 

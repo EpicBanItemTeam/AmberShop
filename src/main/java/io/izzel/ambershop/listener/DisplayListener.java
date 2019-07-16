@@ -1,14 +1,17 @@
 package io.izzel.ambershop.listener;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
+import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.izzel.amber.commons.i18n.AmberLocale;
+import io.izzel.amber.commons.i18n.args.Arg;
 import io.izzel.ambershop.AmberShop;
 import io.izzel.ambershop.conf.AmberConfManager;
-import io.izzel.ambershop.conf.AmberLocale;
 import io.izzel.ambershop.data.ShopDataSource;
 import io.izzel.ambershop.data.ShopRecord;
-import io.izzel.ambershop.mixin.AmberPlayer;
+import io.izzel.ambershop.unsafe.AmberDisplay;
 import io.izzel.ambershop.util.AmberTasks;
 import io.izzel.ambershop.util.Blocks;
 import lombok.SneakyThrows;
@@ -21,7 +24,6 @@ import org.spongepowered.api.block.tileentity.carrier.TileEntityCarrier;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.SpongeEventFactory;
@@ -32,9 +34,8 @@ import org.spongepowered.api.event.item.inventory.InteractInventoryEvent;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
 import org.spongepowered.api.item.inventory.type.CarriedInventory;
 import org.spongepowered.api.scheduler.Task;
-import org.spongepowered.api.service.user.UserStorageService;
 import org.spongepowered.api.text.Text;
-import org.spongepowered.api.text.serializer.TextSerializers;
+import org.spongepowered.api.text.TranslatableText;
 import org.spongepowered.api.util.Direction;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -42,13 +43,9 @@ import org.spongepowered.api.world.World;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @Singleton
 public class DisplayListener {
-
-    private static final Pattern PATTERN = Pattern.compile("(.*?)(%shop_[^%]*%)|(.+)");
 
     @Inject private AmberConfManager conf;
     @Inject private AmberLocale locale;
@@ -56,6 +53,7 @@ public class DisplayListener {
     @Inject private ShopDataSource ds;
     @Inject private AmberShop instance;
     @Inject private ShopTradeListener trade;
+    @Inject private AmberDisplay display;
 
     @Listener
     public void onJoin(ClientConnectionEvent.Join event) {
@@ -84,7 +82,7 @@ public class DisplayListener {
             if (event.getTargetBlock().getState().getType() == BlockTypes.AIR) { // generated signs
                 val loc = event.getTargetBlock().getLocation();
                 if (!loc.isPresent()) return;
-                val opt = ((AmberPlayer) player).getSign(loc.get());
+                val opt = display.getSign(player, loc.get());
                 if (opt.isPresent()) {
                     val direction = opt.get();
                     val chestLoc = loc.get().sub(direction.asBlockOffset());
@@ -93,11 +91,11 @@ public class DisplayListener {
                             event.setCancelled(true);
                             Optional.ofNullable(map.get(player.getUniqueId())).ifPresent(task -> {
                                 val lines = task.makeSignLines(rec);
-                                tasks.sync().submit(() -> ((AmberPlayer) player).sendSign(loc.get(), direction, lines));
+                                tasks.sync().submit(() -> display.sendSign(player, loc.get(), direction, lines));
                             });
                         } else if (event instanceof InteractBlockEvent.Primary) { // left click for trading
                             val newEvent = SpongeEventFactory.createInteractBlockEventPrimaryMainHand(event.getCause().with(this),
-                                    HandTypes.MAIN_HAND, Optional.empty(), chestLoc.getBlock().snapshotFor(chestLoc), direction);
+                                HandTypes.MAIN_HAND, Optional.empty(), chestLoc.getBlock().snapshotFor(chestLoc), direction);
                             trade.onTrade(newEvent, player);
                         }
                     });
@@ -182,68 +180,37 @@ public class DisplayListener {
             val block = location.getBlock();
             if (conf.get().shopSettings.displayItem) {
                 val itemLoc = location.add(0.5, 1.2, 0.5);
-                ((AmberPlayer) player).sendDroppedItem(itemLoc, record.getItemType().createStack());
+                display.sendDroppedItem(player, itemLoc, record.getItemType().createStack());
             }
             if (conf.get().shopSettings.displaySign) {
                 val direction = block.get(Keys.DIRECTION);
                 if (!direction.isPresent()) return;
                 val sign = location.add(direction.get().asBlockOffset());
                 if (sign.getBlockType() != BlockTypes.AIR) return;
-                ((AmberPlayer) player).sendSign(sign, direction.get(), makeSignLines(record));
+                display.sendSign(player, sign, direction.get(), makeSignLines(record));
             }
         }
 
         private List<Text> makeSignLines(ShopRecord record) {
-            return conf.get().shopSettings.signInfo.stream().map(it -> {
-                val ret = Text.builder();
-
-                val matcher = PATTERN.matcher(it);
-                while (matcher.find()) {
-                    if (matcher.group(3) == null) {
-                        val text = matcher.group(1);
-                        ret.append(TextSerializers.FORMATTING_CODE.deserialize(text));
-                        val placeholder = matcher.group(2);
-                        switch (placeholder) {
-                            case "%shop_item%":
-                                val stack = record.getItemType().createStack();
-                                ret.append(locale.itemName(stack));
-                                break;
-                            case "%shop_owner%":
-                                ret.append(Text.of(Sponge.getServiceManager().provideUnchecked(UserStorageService.class)
-                                        .get(record.owner).map(User::getName).orElse("")));
-                                break;
-                            case "%shop_price%":
-                                ret.append(Text.of(String.valueOf(Math.abs(record.price))));
-                                break;
-                            case "%shop_type%":
-                                ret.append(locale.getText(record.price < 0 ? "trade.type.sell" : "trade.type.buy"));
-                                break;
-                            case "%shop_stock%":
-                                ret.append(Text.of(record.isUnlimited() ?
-                                        locale.getText("trade.type.unlimited") : String.valueOf(record.getStock())));
-                                break;
-                            default:
-                        }
-                    } else {
-                        val text = matcher.group(3);
-                        ret.append(TextSerializers.FORMATTING_CODE.deserialize(text));
-                    }
-                }
-
-                return ret.build();
-            }).collect(Collectors.toList());
+            return locale.getAs("trade.display-sign", ImmutableList.of(), new TypeToken<List<Text>>() {},
+                Arg.user(record.owner),
+                record.price,
+                record.isUnlimited() ? Arg.ref("trade.types.unlimited") : record.getStock(),
+                record.getItemType().get(Keys.DISPLAY_NAME)
+                    .orElseGet(() -> TranslatableText.builder(record.getItemType().getTranslation()).build()),
+                Arg.ref(record.price < 0 ? "trade.types.sell" : "trade.types.buy"));
         }
 
         private void resetDisplay(Location<World> location, Direction direction) {
             if (conf.get().shopSettings.displaySign) {
                 val sign = location.add(direction.asBlockOffset());
                 Sponge.getServer().getPlayer(playerUid).filter(it -> it.getWorld().getUniqueId().equals(location.getExtent().getUniqueId()))
-                        .ifPresent(player -> ((AmberPlayer) player).resetSign(sign));
+                    .ifPresent(player -> display.resetSign(player, sign));
             }
             if (conf.get().shopSettings.displayItem) {
                 val itemLoc = location.add(0.5, 1.2, 0.5);
                 Sponge.getServer().getPlayer(playerUid).filter(it -> it.getWorld().getUniqueId().equals(location.getExtent().getUniqueId()))
-                        .ifPresent(player -> ((AmberPlayer) player).resetDroppedItem(itemLoc));
+                    .ifPresent(player -> display.resetDroppedItem(player, itemLoc));
             }
         }
 

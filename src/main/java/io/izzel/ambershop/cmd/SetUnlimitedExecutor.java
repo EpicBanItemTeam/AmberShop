@@ -2,7 +2,7 @@ package io.izzel.ambershop.cmd;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.izzel.ambershop.conf.AmberLocale;
+import io.izzel.amber.commons.i18n.AmberLocale;
 import io.izzel.ambershop.data.ShopDataSource;
 import io.izzel.ambershop.util.AmberTasks;
 import io.izzel.ambershop.util.Blocks;
@@ -25,7 +25,7 @@ public class SetUnlimitedExecutor implements CommandExecutor {
     @NonnullByDefault
     @Override
     public CommandResult execute(CommandSource src, CommandContext args) {
-        val ul = args.<Boolean>getOne(Text.of("unlimited")).get();
+        val ul = args.<Boolean>getOne(Text.of("unlimited")).orElse(false);
         if (src instanceof Player) {
             val player = ((Player) src);
             val opt = Blocks.playerOnCursor(player).flatMap(ds::getByLocation);
@@ -34,11 +34,11 @@ public class SetUnlimitedExecutor implements CommandExecutor {
                 rec.setUnlimited(ul);
                 tasks.async().submit(() -> {
                     val result = ds.updateRecord(rec).get();
-                    player.sendMessage(result.reason());
+                    locale.to(player, result.getPath(), result.getArgs());
                     return null;
                 });
-            } else player.sendMessage(locale.getText("commands.unlimited.fail.no-shop"));
-        } else src.sendMessage(locale.getText("commands.unlimited.fail.player-only"));
+            } else locale.to(player, "commands.unlimited.fail.no-shop");
+        } else locale.to(src, "commands.unlimited.fail.player-only");
         return CommandResult.success();
     }
 }

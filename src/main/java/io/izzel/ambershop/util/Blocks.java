@@ -38,9 +38,9 @@ public class Blocks {
 
     public Optional<Location<World>> playerOnCursor(Player player) {
         val blockRay = BlockRay.from(player)
-                .stopFilter(BlockRay.continueAfterFilter(BlockRay.onlyAirFilter(), 1))
-                .distanceLimit(6)
-                .build();
+            .stopFilter(BlockRay.continueAfterFilter(BlockRay.onlyAirFilter(), 1))
+            .distanceLimit(6)
+            .build();
         val end = blockRay.end();
         if (end.isPresent()) {
             val hit = end.get();

@@ -1,7 +1,6 @@
 package io.izzel.ambershop.util;
 
 import io.izzel.ambershop.AmberShop;
-import io.izzel.ambershop.trade.TransactionResult;
 import lombok.experimental.UtilityClass;
 import lombok.val;
 import org.spongepowered.api.Sponge;
@@ -20,7 +19,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 
 @UtilityClass
 public class Util {
@@ -98,9 +96,9 @@ public class Util {
         val stringBuilder = new StringBuilder(template.length());
         for (int i = 0; i < arr.length; i++) {
             if (arr[i] == '{' && Character.isDigit(arr[Math.min(i + 1, arr.length - 1)])
-                    && arr[Math.min(i + 1, arr.length - 1)] - '0' < args.length
-                    && arr[Math.min(i + 2, arr.length - 1)] == '}'
-                    && args[arr[i + 1] - '0'] != null) {
+                && arr[Math.min(i + 1, arr.length - 1)] - '0' < args.length
+                && arr[Math.min(i + 2, arr.length - 1)] == '}'
+                && args[arr[i + 1] - '0'] != null) {
                 stringBuilder.append(args[arr[i + 1] - '0']);
                 i += 2;
             } else {
@@ -110,14 +108,15 @@ public class Util {
         return stringBuilder.toString();
     }
 
-    public TransactionResult performEconomy(UUID uuid, BigDecimal price, boolean isWithdraw) {
+    public OperationResult performEconomy(UUID uuid, BigDecimal price, boolean isWithdraw) {
         val eco = Sponge.getServiceManager().provideUnchecked(EconomyService.class);
-        val playerAcc = eco.getOrCreateAccount(uuid).get();
+        val playerAcc = eco.getOrCreateAccount(uuid).orElseThrow(IllegalStateException::new);
         val ctx = EventContext.builder().add(EventContextKeys.PLUGIN, AmberShop.SINGLETON.container).build();
         val cause = Cause.of(ctx, AmberShop.SINGLETON.container);
         val currency = eco.getDefaultCurrency();
         val result = isWithdraw ? playerAcc.withdraw(currency, price, cause) : playerAcc.deposit(currency, price, cause);
-        return result.getResult() == ResultType.SUCCESS ? TransactionResult.SUCCESS : TransactionResult.ECONOMY_ISSUE;
+        return result.getResult() == ResultType.SUCCESS ? OperationResult.of("trade.transaction-results.success")
+            : OperationResult.fail("trade.transaction-results.economy-issue");
     }
 
 }

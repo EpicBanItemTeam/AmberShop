@@ -2,8 +2,8 @@ package io.izzel.ambershop.listener;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.izzel.amber.commons.i18n.AmberLocale;
 import io.izzel.ambershop.conf.AmberConfManager;
-import io.izzel.ambershop.conf.AmberLocale;
 import io.izzel.ambershop.data.ShopDataSource;
 import io.izzel.ambershop.util.AmberTasks;
 import lombok.val;
@@ -39,17 +39,17 @@ public class ShopRemoveListener {
                     if (first.isPresent()) {
                         val player = first.get();
                         if (player.getUniqueId().equals(rec.get().owner) ? player.hasPermission("ambershop.user.remove")
-                                : player.hasPermission("ambershop.admin.remove")) {
+                            : player.hasPermission("ambershop.admin.remove")) {
                             display.reset(loc, direction.get()); // reset sign
                             tasks.async().submit(() -> {
                                 val result = dataSource.removeRecord(rec.get()).get();
-                                player.sendMessage(result.reason());
+                                locale.to(player, result.getPath(), result.getArgs());
                                 return null;
                             });
                         } else {
                             if (conf.get().shopSettings.protectShops) {
                                 event.setCancelled(true);
-                                player.sendMessage(locale.getText("trade.protect"));
+                                locale.to(player, "trade.protect");
                             }
                         }
                     } else {
