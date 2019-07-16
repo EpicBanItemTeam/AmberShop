@@ -2,7 +2,6 @@ package io.izzel.ambershop.cmd;
 
 import com.google.common.collect.ImmutableList;
 import io.izzel.ambershop.util.Util;
-import lombok.experimental.UtilityClass;
 import lombok.val;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.ArgumentParseException;
@@ -14,10 +13,9 @@ import org.spongepowered.api.text.Text;
 import javax.annotation.Nullable;
 import java.util.List;
 
-@UtilityClass
 public class Arguments {
 
-    public CommandElement num(String key) {
+    public static CommandElement num(String key) {
         return new FormattedDouble(Text.of(key));
     }
 
