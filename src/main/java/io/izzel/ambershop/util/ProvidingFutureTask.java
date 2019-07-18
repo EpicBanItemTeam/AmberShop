@@ -1,5 +1,6 @@
 package io.izzel.ambershop.util;
 
+import lombok.val;
 import org.spongepowered.api.util.annotation.NonnullByDefault;
 
 import java.util.Optional;
@@ -10,11 +11,13 @@ import java.util.concurrent.TimeUnit;
 @NonnullByDefault
 public class ProvidingFutureTask<T> extends FutureTask<Optional<T>> {
 
+    private static final Object CANCEL = new Object();
+
     private final ArrayBlockingQueue<T> queue;
 
     private final long timeout;
     private final TimeUnit unit;
-    private boolean done;
+    private boolean done = false, cancel = false;
 
     public ProvidingFutureTask(long timeout, TimeUnit unit) {
         super(Optional::empty);
@@ -25,12 +28,14 @@ public class ProvidingFutureTask<T> extends FutureTask<Optional<T>> {
 
     @Override
     public Optional<T> get() throws InterruptedException {
-        return Optional.ofNullable(queue.poll(timeout, unit));
+        val poll = queue.poll(timeout, unit);
+        return Optional.ofNullable(poll == CANCEL ? null : poll);
     }
 
     @Override
     public Optional<T> get(long timeout, TimeUnit unit) throws InterruptedException {
-        return Optional.ofNullable(queue.poll(timeout, unit));
+        val poll = queue.poll(timeout, unit);
+        return Optional.ofNullable(poll == CANCEL ? null : poll);
     }
 
     @Override
@@ -39,7 +44,17 @@ public class ProvidingFutureTask<T> extends FutureTask<Optional<T>> {
     }
 
     public void provide(T value) {
-        done = done || queue.offer(value);
+        done = (done || cancel || queue.offer(value));
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public boolean cancel(boolean mayInterruptIfRunning) {
+        return cancel = (done || cancel || queue.offer((T) CANCEL));
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return cancel;
+    }
 }

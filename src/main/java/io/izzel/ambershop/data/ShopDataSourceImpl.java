@@ -117,7 +117,7 @@ class ShopDataSourceImpl implements ShopDataSource {
     @Override
     public Future<List<ShopRecord>> fetchRecordBy(List<String> map) {
         return tasks.async().submit(() -> {
-            val sql = "select * from ambershop_shops where " + String.join(" and ", map);
+            val sql = "select * from ambershop_shops" + (map.isEmpty() ? "" : " where " + String.join(" and ", map)) + ";";
             @Cleanup val conn = storage.connection();
             @Cleanup val stmt = conn.createStatement();
             @Cleanup val rs = stmt.executeQuery(sql);

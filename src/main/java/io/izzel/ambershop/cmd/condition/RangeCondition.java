@@ -3,6 +3,7 @@ package io.izzel.ambershop.cmd.condition;
 import com.google.common.collect.ImmutableList;
 import io.izzel.ambershop.data.ShopRecord;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 import lombok.val;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.ArgumentParseException;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
+@ToString
 @RequiredArgsConstructor
 public class RangeCondition extends Condition {
 
@@ -43,11 +45,11 @@ public class RangeCondition extends Condition {
 
     public static class Parser extends CommandElement {
 
-        private static final Pattern RANGE = Pattern.compile("([\\[(])([+\\-]?\\d+)?,([+\\-]?\\d+)?([])])");
+        private static final Pattern RANGE = Pattern.compile("^([\\[(])([+\\-]?\\d+)?,([+\\-]?\\d+)?([])])$");
         private String name;
         private Function<ShopRecord, Number> getter;
 
-        protected Parser(@Nullable Text key, String name, Function<ShopRecord, Number> getter) {
+        Parser(@Nullable Text key, String name, Function<ShopRecord, Number> getter) {
             super(key);
             this.name = name;
             this.getter = getter;
@@ -69,10 +71,10 @@ public class RangeCondition extends Condition {
                     if (leftValue == rightValue && (!leftInclusive || !rightInclusive))
                         throw args.createError(Text.of(next));
                     val leftOp = leftInclusive ? ">=" : ">";
-                    val rightOp = leftInclusive ? "<=" : "<";
+                    val rightOp = rightInclusive ? "<=" : "<";
                     return new RangeCondition(
                         new ExpCondition(name, getter, leftOp, Op.ofInt(leftOp), leftValue),
-                        new ExpCondition(name, getter, rightOp, Op.ofInt(rightOp), leftValue)
+                        new ExpCondition(name, getter, rightOp, Op.ofInt(rightOp), rightValue)
                     );
                 }
                 throw args.createError(Text.of("Not a range: " + next));
@@ -85,5 +87,11 @@ public class RangeCondition extends Condition {
         public List<String> complete(CommandSource src, CommandArgs args, CommandContext context) {
             return ImmutableList.of();
         }
+
+        @Override
+        public Text getUsage(CommandSource src) {
+            return Text.of("[x,y)");
+        }
+
     }
 }

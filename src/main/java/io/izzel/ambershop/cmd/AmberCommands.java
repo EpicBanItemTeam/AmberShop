@@ -11,8 +11,8 @@ import org.spongepowered.api.command.spec.CommandSpec;
 import org.spongepowered.api.text.Text;
 
 import static io.izzel.ambershop.cmd.Arguments.num;
-import static io.izzel.ambershop.cmd.condition.Condition.id;
 import static io.izzel.ambershop.cmd.condition.Condition.world;
+import static io.izzel.ambershop.cmd.condition.Condition.*;
 import static org.spongepowered.api.command.args.GenericArguments.*;
 
 @Singleton
@@ -83,6 +83,7 @@ public class AmberCommands {
                         flags()
                             .valueFlag(requiringPermission(id("q_id"), "ambershop.user.query.id"), "-id", "i")
                             .valueFlag(requiringPermission(world("q_world"), "ambershop.user.query.world"), "-world", "w")
+                            .valueFlag(requiringPermission(price("q_price"), "ambershop.user.query.price"), "-price", "p")
                             .buildWith(queryChild)
                     )
                     .executor(queryChild)

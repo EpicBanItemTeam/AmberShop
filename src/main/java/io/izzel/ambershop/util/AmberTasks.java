@@ -7,15 +7,16 @@ import io.izzel.ambershop.AmberShop;
 import io.izzel.ambershop.listener.OneTimeChatListener;
 import lombok.SneakyThrows;
 import lombok.val;
+import org.apache.commons.lang3.tuple.Pair;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.message.MessageChannelEvent;
-import org.spongepowered.api.scheduler.SpongeExecutorService;
 
+import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.UUID;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -26,10 +27,10 @@ public class AmberTasks {
     @Inject private AmberShop inst;
     @Inject private AmberLocale locale;
 
-    private SpongeExecutorService async, sync;
+    private ScheduledExecutorService async, sync;
 
     public void init() {
-        async = Sponge.getScheduler().createAsyncExecutor(inst);
+        async = Executors.newScheduledThreadPool(16);
         sync = Sponge.getScheduler().createSyncExecutor(inst);
     }
 
@@ -39,11 +40,11 @@ public class AmberTasks {
         sync.shutdown();
     }
 
-    public SpongeExecutorService async() {
+    public ScheduledExecutorService async() {
         return async;
     }
 
-    public SpongeExecutorService sync() {
+    public ScheduledExecutorService sync() {
         return sync;
     }
 
@@ -77,20 +78,30 @@ public class AmberTasks {
         return inputChat(player, timeout, unit, predicate, consumer, p -> locale.to(p, "trade.expire"));
     }
 
+    private Map<UUID, Pair<OneTimeChatListener, ProvidingFutureTask<String>>> chats = new ConcurrentHashMap<>();
+
     /**
      * @param predicate test if input is valid
      * @param consumer  callback when input do not pass the predicate
      * @param onTimeout callback when input is expired
      */
     public Future<Optional<String>> inputChat(Player player, long timeout, TimeUnit unit, Predicate<String> predicate, Consumer<Player> consumer, Consumer<Player> onTimeout) {
+        val uid = player.getUniqueId();
+        chats.computeIfPresent(uid, (key, pair) -> {
+            Sponge.getEventManager().unregisterListeners(pair.getLeft());
+            pair.getRight().cancel(true);
+            return null;
+        });
         val task = new ProvidingFutureTask<String>(timeout, unit);
         val listener = new OneTimeChatListener(task, player, predicate, consumer);
+        chats.put(uid, Pair.of(listener, task));
         Sponge.getEventManager().registerListener(inst, MessageChannelEvent.Chat.class, Order.FIRST, listener);
-        val uid = player.getUniqueId();
         sync.schedule(() -> {
+            if (task.isCancelled()) return;
             Sponge.getEventManager().unregisterListeners(listener);
             val p = Sponge.getServer().getPlayer(uid);
             if (!task.isDone() && p.isPresent()) onTimeout.accept(p.get());
+            chats.remove(uid);
         }, timeout, unit);
         return task;
     }

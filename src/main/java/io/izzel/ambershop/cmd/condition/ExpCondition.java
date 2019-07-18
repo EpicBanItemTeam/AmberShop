@@ -3,6 +3,7 @@ package io.izzel.ambershop.cmd.condition;
 import com.google.common.collect.ImmutableList;
 import io.izzel.ambershop.data.ShopRecord;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 import lombok.val;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.ArgumentParseException;
@@ -17,11 +18,12 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
+@ToString
 @RequiredArgsConstructor
 public class ExpCondition extends Condition {
 
     private final String name;
-    private final Function<ShopRecord, Number> getter;
+    @ToString.Exclude private final Function<ShopRecord, Number> getter;
     private final String opName;
     private final Op op;
     private final long num;
@@ -48,12 +50,11 @@ public class ExpCondition extends Condition {
 
     public static class Parser extends CommandElement {
 
-        private static final Pattern EXP = Pattern.compile("(=|>|<|>=|<=|!=)([+\\-]?\\d+)");
-        private static final Pattern RANGE = Pattern.compile("([\\[(])([+\\-]?\\d+)?,([+\\-]?\\d+)?([])])");
+        private static final Pattern EXP = Pattern.compile("^(=|>|<|>=|<=|!=)([+\\-]?\\d+)$");
         private String name;
         private Function<ShopRecord, Number> getter;
 
-        protected Parser(@Nullable Text key, String name, Function<ShopRecord, Number> getter) {
+        Parser(@Nullable Text key, String name, Function<ShopRecord, Number> getter) {
             super(key);
             this.name = name;
             this.getter = getter;
@@ -84,6 +85,12 @@ public class ExpCondition extends Condition {
         public List<String> complete(CommandSource src, CommandArgs args, CommandContext context) {
             return ImmutableList.of();
         }
+
+        @Override
+        public Text getUsage(CommandSource src) {
+            return Text.of("<'<='|'>'|...><number>");
+        }
+
     }
 
 }

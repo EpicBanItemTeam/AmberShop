@@ -2,6 +2,7 @@ package io.izzel.ambershop.cmd.condition;
 
 import io.izzel.ambershop.data.ShopRecord;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 import lombok.val;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandSource;
@@ -19,6 +20,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@ToString
 @RequiredArgsConstructor
 public class WorldCondition extends Condition {
 
