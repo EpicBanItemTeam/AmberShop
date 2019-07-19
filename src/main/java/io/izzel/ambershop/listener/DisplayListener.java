@@ -28,6 +28,7 @@ import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.SpongeEventFactory;
 import org.spongepowered.api.event.block.InteractBlockEvent;
+import org.spongepowered.api.event.filter.IsCancelled;
 import org.spongepowered.api.event.filter.cause.First;
 import org.spongepowered.api.event.filter.type.Include;
 import org.spongepowered.api.event.item.inventory.InteractInventoryEvent;
@@ -37,6 +38,7 @@ import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.TranslatableText;
 import org.spongepowered.api.util.Direction;
+import org.spongepowered.api.util.Tristate;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
@@ -75,6 +77,7 @@ public class DisplayListener {
         }
     }
 
+    @IsCancelled(Tristate.UNDEFINED)
     @Include({InteractBlockEvent.Primary.class, InteractBlockEvent.Secondary.class})
     @Listener(order = Order.LAST, beforeModifications = true)
     public void onSignTradeAndUpdate(InteractBlockEvent event, @First Player player) {
@@ -93,7 +96,7 @@ public class DisplayListener {
                                 val lines = task.makeSignLines(rec);
                                 tasks.sync().submit(() -> display.sendSign(player, loc.get(), direction, lines));
                             });
-                        } else if (event instanceof InteractBlockEvent.Primary) { // left click for trading
+                        } else if (event instanceof InteractBlockEvent.Primary && !event.isCancelled()) { // left click for trading
                             val newEvent = SpongeEventFactory.createInteractBlockEventPrimaryMainHand(event.getCause().with(this),
                                 HandTypes.MAIN_HAND, Optional.empty(), chestLoc.getBlock().snapshotFor(chestLoc), direction);
                             trade.onTrade(newEvent, player);
