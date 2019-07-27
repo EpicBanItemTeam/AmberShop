@@ -25,6 +25,9 @@ public class AmberConf {
         @Setting(comment = "Allow players create shop by left-clicking a chest.")
         public boolean createByInteract = true;
 
+        @Setting(comment = "Create shops only when player is sneaking.")
+        public boolean createOnlySneaking = false;
+
         @Setting(comment = "Do protect shop.")
         public boolean protectShops = true;
 
