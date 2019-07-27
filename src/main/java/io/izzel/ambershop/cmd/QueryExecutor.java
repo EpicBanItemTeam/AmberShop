@@ -16,6 +16,8 @@ import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.spec.CommandExecutor;
+import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.service.pagination.PaginationList;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.World;
@@ -38,7 +40,10 @@ public class QueryExecutor {
             .collect(Collectors.toList());
         val queryList = conditions.stream().filter(Condition::query).map(Condition::get).collect(Collectors.toList());
         val tests = conditions.stream().filter(Condition::test);
-        return ds.fetchRecordBy(queryList).get().stream().filter(it -> tests.allMatch(condition -> condition.test(it))).collect(Collectors.toList());
+        return ds.fetchRecordBy(queryList).get()
+            .stream()
+            .filter(it -> tests.allMatch(condition -> condition.test(it)))
+            .collect(Collectors.toList());
     }
 
     @Inject RemoveExecutor remove;
@@ -47,9 +52,22 @@ public class QueryExecutor {
 
     public static class RemoveExecutor implements CommandExecutor {
 
+        @Inject private AmberTasks tasks;
+        @Inject private ShopDataSource ds;
+        @Inject private AmberLocale locale;
+
         @Override
         public CommandResult execute(CommandSource src, CommandContext args) {
-
+            val copy = new CommandContext();
+            copy.applySnapshot(args.createSnapshot());
+            val uid = src instanceof Player ? ((Player) src).getUniqueId() : null;
+            tasks.async().submit(() -> {
+                val records = queryByArgs(copy, ds);
+                val stream = records.stream().filter(it -> src.hasPermission(it.owner.equals(uid) ? "ambershop.user.remove" : "ambershop.admin.remove"));
+                stream.map(ds::removeRecord).forEach(it -> { try { it.get(); } catch (Exception ignored) { } });
+                locale.to(src, "commands.query.remove", stream.count());
+                return null;
+            });
             return CommandResult.success();
         }
 
@@ -57,8 +75,36 @@ public class QueryExecutor {
 
     public static class SetExecutor implements CommandExecutor {
 
+        @Inject private AmberTasks tasks;
+        @Inject private ShopDataSource ds;
+        @Inject private AmberLocale locale;
+
         @Override
         public CommandResult execute(CommandSource src, CommandContext args) {
+            val copy = new CommandContext();
+            copy.applySnapshot(args.createSnapshot());
+            val uid = src instanceof Player ? ((Player) src).getUniqueId() : null;
+            val priceUser = src.hasPermission("ambershop.user.setprice");
+            val priceAdmin = src.hasPermission("ambershop.admin.setprice");
+            val ownerUser = src.hasPermission("ambershop.user.setowner");
+            val ownerAdmin = src.hasPermission("ambershop.admin.setowner");
+            val unlimited = src.hasPermission("ambershop.admin.unlimited");
+            tasks.async().submit(() -> {
+                val records = queryByArgs(copy, ds);
+                records.forEach(it -> {
+                    copy.<Double>getOne("s_price").filter(x -> priceUser && it.owner.equals(uid) || priceAdmin)
+                        .ifPresent(it::setPrice);
+                    copy.<User>getOne("s_owner").filter(x -> ownerUser && it.owner.equals(uid) || ownerAdmin)
+                        .map(User::getUniqueId)
+                        .ifPresent(it::setOwner);
+                    copy.<Boolean>getOne("s_unlimited").filter(x -> unlimited)
+                        .ifPresent(it::setUnlimited);
+                });
+                records.stream().map(ds::updateRecord)
+                    .forEach(it -> { try { it.get(); } catch (Exception ignored) { } });
+                locale.to(src, "commands.query.set", records.size());
+                return null;
+            });
             return CommandResult.success();
         }
 
