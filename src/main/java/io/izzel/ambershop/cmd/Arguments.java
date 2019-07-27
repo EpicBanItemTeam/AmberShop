@@ -21,7 +21,7 @@ public class Arguments {
 
     private static class FormattedDouble extends CommandElement {
 
-        protected FormattedDouble(@Nullable Text key) {
+        FormattedDouble(@Nullable Text key) {
             super(key);
         }
 
@@ -30,7 +30,7 @@ public class Arguments {
         protected Object parseValue(CommandSource source, CommandArgs args) throws ArgumentParseException {
             try {
                 val next = args.next();
-                return Util.asDouble(next).get();
+                return Util.asDouble(next).orElseThrow(Exception::new);
             } catch (Exception e) {
                 throw args.createError(Text.of(e));
             }

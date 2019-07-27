@@ -9,7 +9,7 @@ import java.util.function.BiFunction;
 public interface Op extends BiFunction<Number, Number, Boolean> {
 
     Map<String, Op> INTS = ImmutableMap.<String, Op>builder()
-        .put("=", Impl.of("=", Object::equals))
+        .put("=", Impl.of("=", (a, b) -> a.longValue() == b.longValue()))
         .put(">=", Impl.of(">=", (a, b) -> a.longValue() >= b.longValue()))
         .put(">", Impl.of(">", (a, b) -> a.longValue() > b.longValue()))
         .put("<=", Impl.of("<=", (a, b) -> a.longValue() <= b.longValue()))
@@ -18,7 +18,7 @@ public interface Op extends BiFunction<Number, Number, Boolean> {
         .build();
 
     Map<String, Op> DECIMALS = ImmutableMap.<String, Op>builder()
-        .put("=", Impl.of("=", Object::equals))
+        .put("=", Impl.of("=", (a, b) -> a.doubleValue() == b.doubleValue()))
         .put(">=", Impl.of(">=", (a, b) -> a.doubleValue() >= b.doubleValue()))
         .put(">", Impl.of(">", (a, b) -> a.doubleValue() > b.doubleValue()))
         .put("<=", Impl.of("<=", (a, b) -> a.doubleValue() <= b.doubleValue()))

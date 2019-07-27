@@ -197,7 +197,7 @@ public class DisplayListener {
         private List<Text> makeSignLines(ShopRecord record) {
             return locale.getAs("trade.display-sign", ImmutableList.of(), new TypeToken<List<Text>>() {},
                 Arg.user(record.owner),
-                record.price,
+                Math.abs(record.price),
                 record.isUnlimited() ? Arg.ref("trade.types.unlimited") : record.getStock(),
                 record.getItemType().get(Keys.DISPLAY_NAME)
                     .orElseGet(() -> TranslatableText.builder(record.getItemType().getTranslation()).build()),

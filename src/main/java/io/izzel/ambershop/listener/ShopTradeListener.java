@@ -51,7 +51,7 @@ public class ShopTradeListener {
             val location = block.getLocation();
             if (!location.isPresent()) return;
             ds.getByLocation(location.get()).ifPresent(rec -> tasks.async().submit(() -> {
-                locale.to(player, "trade.shop-info", Arg.user(rec.owner), rec.getItemType(), rec.getStock(), rec.getPrice(),
+                locale.to(player, "trade.shop-info", Arg.user(rec.owner), rec.getItemType(), rec.getStock(), Math.abs(rec.price),
                     Arg.ref(rec.price < 0 ? "trade.types.sell" : "trade.types.buy"));
                 if (!player.getUniqueId().equals(rec.owner)) {
                     locale.to(player, rec.price < 0 ? "trade.input-sell" : "trade.input-buy");
@@ -77,8 +77,8 @@ public class ShopTradeListener {
             if (cs.hasPermission("ambershop.user.setprice")) tasks.async().submit(() -> {
                 locale.to(cs, "trade.manage.input.price");
                 tasks.inputNumber(((Player) cs), cm.get().shopSettings.inputExpireTime, TimeUnit.SECONDS).get()
-                    .ifPresent(aDouble -> tasks.sync().execute(() -> Sponge.getCommandManager()
-                        .process(cs, String.format("ambershop query -q -id %s -s -p %s", record.id, aDouble))));
+                    .ifPresent(price -> tasks.sync().execute(() -> Sponge.getCommandManager()
+                        .process(cs, String.format("ambershop query -i %s s --p=%s", record.id, price))));
                 return null;
             });
         }), Arg.ref("trade.manage.button.owner").withCallback(cs -> {
@@ -86,7 +86,7 @@ public class ShopTradeListener {
                 locale.to(cs, "trade.manage.input.owner");
                 tasks.inputChat(((Player) cs), cm.get().shopSettings.inputExpireTime, TimeUnit.SECONDS).get()
                     .ifPresent(s -> tasks.sync().execute(() -> Sponge.getCommandManager()
-                        .process(cs, String.format("ambershop query -q -id %s -s -o %s", record.id, s))));
+                        .process(cs, String.format("ambershop query -i %s s --o=%s", record.id, s))));
                 return null;
             });
         }), player.hasPermission("ambershop.admin.unlimited") ? Arg.ref("trade.manage.button.unlimited") : "", !record.isUnlimited());

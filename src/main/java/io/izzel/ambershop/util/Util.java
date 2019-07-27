@@ -34,7 +34,7 @@ public class Util {
 
     public Optional<Double> asDouble(String str) {
         try {
-            return Optional.of(BigDecimal.valueOf(Double.parseDouble(str)).setScale(2, RoundingMode.HALF_UP).doubleValue());
+            return Optional.of(new BigDecimal(str).setScale(2, RoundingMode.HALF_UP).doubleValue());
         } catch (Exception e) {
             return Optional.empty();
         }

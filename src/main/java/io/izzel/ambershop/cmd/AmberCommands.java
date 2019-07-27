@@ -55,18 +55,10 @@ public class AmberCommands {
             {
                 val queryRemove = CommandSpec.builder()
                     .permission("ambershop.user.query.remove")
-                    .arguments()
                     .executor(qe.remove)
                     .build();
                 val querySet = CommandSpec.builder()
                     .permission("ambershop.user.query.set")
-                    .arguments(
-                        flags()
-                            .valueFlag(requiringPermission(bool(Text.of("s_unlimited")), "ambershop.admin.unlimited"), "-unlimited", "u")
-                            .valueFlag(requiringPermission(num("s_price"), "ambershop.user.setprice"), "-price", "p")
-                            .valueFlag(requiringPermission(user(Text.of("s_owner")), "ambershop.user.setowner"), "-owner", "o")
-                            .buildWith(none())
-                    )
                     .executor(qe.set)
                     .build();
                 val queryList = CommandSpec.builder()
@@ -84,6 +76,10 @@ public class AmberCommands {
                             .valueFlag(requiringPermission(id("q_id"), "ambershop.user.query.id"), "-id", "i")
                             .valueFlag(requiringPermission(world("q_world"), "ambershop.user.query.world"), "-world", "w")
                             .valueFlag(requiringPermission(price("q_price"), "ambershop.user.query.price"), "-price", "p")
+
+                            .valueFlag(requiringPermission(bool(Text.of("s_unlimited")), "ambershop.admin.unlimited"), "-u")
+                            .valueFlag(requiringPermission(num("s_price"), "ambershop.user.setprice"), "-p")
+                            .valueFlag(requiringPermission(user(Text.of("s_owner")), "ambershop.user.setowner"), "-o")
                             .buildWith(queryChild)
                     )
                     .executor(queryChild)
