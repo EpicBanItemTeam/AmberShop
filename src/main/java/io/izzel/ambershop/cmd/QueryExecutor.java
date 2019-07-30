@@ -125,7 +125,8 @@ public class QueryExecutor {
                     .map(record -> locale.getAs("trade.record-info", TypeToken.of(Text.class), record.id, Arg.user(record.owner), record.price,
                         Sponge.getServer().getWorld(record.world).map(World::getName).orElse(record.world.toString()),
                         Instant.ofEpochMilli(record.createTime).toString(),
-                        record.isUnlimited() ? Arg.ref("trade.types.unlimited") : "", record.x, record.y, record.z, record.getItemType()))
+                        record.isUnlimited() ? Arg.ref("trade.types.unlimited") : "", record.x, record.y, record.z, record.getItemType(),
+                        Arg.ref(record.price < 0 ? "trade.types.sell" : "trade.types.buy")))
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .collect(Collectors.toList());
