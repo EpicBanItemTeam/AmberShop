@@ -45,6 +45,20 @@ public class AmberConf {
             "Set to -1 to disable limit.")
         public int maxShops = -1;
 
+        @Setting(comment = "Tax related settings.")
+        public Tax taxSettings = new Tax();
+
+        @ConfigSerializable
+        public static class Tax {
+
+            @Setting(comment = "Enable taxes.")
+            public boolean enable = false;
+
+            @Setting(comment = "Tax rate.")
+            public double tax = 0.02;
+
+        }
+
     }
 
 }

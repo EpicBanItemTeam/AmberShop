@@ -22,10 +22,10 @@ public class Trades {
         } else {
             if (sell) {
                 return new PlayerShopTrading(playerInv, chestInv, playerUid, record.owner, amount,
-                    Math.abs(record.price), record.getItemType().createStack());
+                    Math.abs(record.price), record.getItemType().createStack(), false);
             } else {
                 return new PlayerShopTrading(chestInv, playerInv, record.owner, playerUid, amount,
-                    Math.abs(record.price), record.getItemType().createStack());
+                    Math.abs(record.price), record.getItemType().createStack(), true);
             }
         }
     }

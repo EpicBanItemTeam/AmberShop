@@ -48,7 +48,7 @@ public class AmberShop {
     @Inject public PluginContainer container;
     @Inject private ShopDataSource dataSource;
     @Inject private AmberTasks tasks;
-    @Inject private AmberConfManager config;
+    @Getter @Inject private AmberConfManager config;
     @Getter @Inject private Metrics metrics;
     @Inject private Updater updater;
     @Inject private AmberLocale locale;

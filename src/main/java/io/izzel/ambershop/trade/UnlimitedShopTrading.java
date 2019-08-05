@@ -49,7 +49,7 @@ public class UnlimitedShopTrading implements Trading {
     private List<ItemStack> provide(int amount) {
         val ret = new ArrayList<ItemStack>();
         while (amount > 0) {
-            int count = amount > 64 ? 64 : amount;
+            int count = Math.min(amount, 64);
             amount -= count;
             val item = type.copy();
             item.setQuantity(count);

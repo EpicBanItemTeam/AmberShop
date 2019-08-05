@@ -23,10 +23,9 @@ public class Blocks {
     public int[] coord(long chunk, short pos) {
         val cz = (int) (chunk & 0xffffffffL);
         val cx = (int) (chunk >>> 32);
-        val posi = ((int) pos);
-        val px = (posi >>> 12) & 0xf;
-        val pz = posi & 0xf;
-        val y = (posi >>> 4) & 0xff;
+        val px = (((int) pos) >>> 12) & 0xf;
+        val pz = ((int) pos) & 0xf;
+        val y = (((int) pos) >>> 4) & 0xff;
         val x = (cx << 4) | px;
         val z = (cz << 4) | pz;
         return new int[]{x, y, z};
