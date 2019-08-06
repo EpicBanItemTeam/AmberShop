@@ -6,6 +6,7 @@ import io.izzel.amber.commons.i18n.AmberLocale;
 import io.izzel.ambershop.conf.AmberConfManager;
 import io.izzel.ambershop.data.ShopDataSource;
 import io.izzel.ambershop.data.ShopRecord;
+import io.izzel.ambershop.module.EbiModule;
 import io.izzel.ambershop.util.AmberTasks;
 import io.izzel.ambershop.util.Blocks;
 import io.izzel.ambershop.util.Util;
@@ -25,6 +26,7 @@ class CreateShopExecutor implements CommandExecutor {
     @Inject private AmberTasks tasks;
     @Inject private ShopDataSource ds;
     @Inject private AmberConfManager cm;
+    @Inject private EbiModule ebiModule;
 
     @NonnullByDefault
     @Override
@@ -39,27 +41,29 @@ class CreateShopExecutor implements CommandExecutor {
                     val tec = (TileEntityCarrier) te.get();
                     val item = tec.getInventory().peek();
                     if (item.isPresent()) {
-                        tasks.async().submit(() -> {
-                            val created = ds.getByPlayer(player).get().size();
-                            val max = player.getOption("ambershop.max-shop").flatMap(Util::asInteger)
-                                .orElse(cm.get().shopSettings.maxShops);
-                            if (max == -1 || max > created) {
-                                try {
-                                    val osr = ds.getByLocation(opt.get());
-                                    if (osr.isPresent()) {
-                                        locale.to(player, "commands.create.fail.exist-shop");
-                                    } else {
-                                        val sr = ShopRecord.of(player, opt.get(), price.orElse(1D));
-                                        sr.setItemType(item.get());
-                                        val csr = ds.addRecord(sr).get();
-                                        locale.to(player, "commands.create.success", csr.id);
+                        if (ebiModule.checkCreate(item.get(), player.getWorld(), player)) {
+                            tasks.async().submit(() -> {
+                                val created = ds.getByPlayer(player).get().size();
+                                val max = player.getOption("ambershop.max-shop").flatMap(Util::asInteger)
+                                    .orElse(cm.get().shopSettings.maxShops);
+                                if (max == -1 || max > created) {
+                                    try {
+                                        val osr = ds.getByLocation(opt.get());
+                                        if (osr.isPresent()) {
+                                            locale.to(player, "commands.create.fail.exist-shop");
+                                        } else {
+                                            val sr = ShopRecord.of(player, opt.get(), price.orElse(1D));
+                                            sr.setItemType(item.get());
+                                            val result = ds.addRecord(sr).get();
+                                            locale.to(player, result.getPath(), result.getArgs());
+                                        }
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
                                     }
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                            } else locale.to(player, "trade.limit-exceeded");
-                            return null;
-                        });
+                                } else locale.to(player, "trade.limit-exceeded");
+                                return null;
+                            });
+                        } else locale.to(player, "commands.create.fail.blacklist.create");
                     } else locale.to(player, "commands.create.fail.no-item");
                 } else locale.to(player, "commands.create.fail.not-chest");
             } else locale.to(player, "commands.create.fail.no-block");

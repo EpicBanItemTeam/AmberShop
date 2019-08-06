@@ -7,6 +7,7 @@ import io.izzel.amber.commons.i18n.args.Arg;
 import io.izzel.ambershop.conf.AmberConfManager;
 import io.izzel.ambershop.data.ShopDataSource;
 import io.izzel.ambershop.data.ShopRecord;
+import io.izzel.ambershop.module.EbiModule;
 import io.izzel.ambershop.trade.Trades;
 import io.izzel.ambershop.util.AmberTasks;
 import io.izzel.ambershop.util.Util;
@@ -35,6 +36,7 @@ public class ShopTradeListener {
     @Inject private AmberConfManager cm;
     @Inject private ShopDataSource ds;
     @Inject private DisplayListener display;
+    @Inject private EbiModule ebiModule;
 
     @IsCancelled(Tristate.UNDEFINED)
     @Listener
@@ -50,25 +52,30 @@ public class ShopTradeListener {
         ) {
             val location = block.getLocation();
             if (!location.isPresent()) return;
-            ds.getByLocation(location.get()).ifPresent(rec -> tasks.async().submit(() -> {
-                locale.to(player, "trade.shop-info", Arg.user(rec.owner), rec.getItemType(), rec.getStock(), Math.abs(rec.price),
-                    Arg.ref(rec.price < 0 ? "trade.types.sell" : "trade.types.buy"));
-                if (!player.getUniqueId().equals(rec.owner)) {
-                    locale.to(player, rec.price < 0 ? "trade.input-sell" : "trade.input-buy");
-                    val opt = tasks.inputChat(player, cm.get().shopSettings.inputExpireTime, TimeUnit.SECONDS,
-                        Util::isInteger, p -> locale.to(p, "trade.format-err")).get()
-                        .flatMap(Util::asInteger);
-                    if (opt.isPresent()) {
-                        val num = opt.get();
-                        if (num > 0) {
-                            val result = Trades.playerShopTrade(player, rec, num, rec.price < 0).performTransaction();
-                            locale.to(player, result.getPath(), result.getArgs());
-                            display.addBlockChange(rec);
-                        } else locale.to(player, "trade.non-negative");
-                    } else locale.to(player, "trade.expire");
-                } else manage(player, rec);
-                return null;
-            }));
+            ds.getByLocation(location.get()).ifPresent(rec -> {
+                val item = rec.getItemType().createStack();
+                if (ebiModule.checkTrade(item, player.getWorld(), player)) {
+                    tasks.async().submit(() -> {
+                        locale.to(player, "trade.shop-info", Arg.user(rec.owner), rec.getItemType(), rec.getStock(), Math.abs(rec.price),
+                            Arg.ref(rec.price < 0 ? "trade.types.sell" : "trade.types.buy"));
+                        if (!player.getUniqueId().equals(rec.owner)) {
+                            locale.to(player, rec.price < 0 ? "trade.input-sell" : "trade.input-buy");
+                            val opt = tasks.inputChat(player, cm.get().shopSettings.inputExpireTime, TimeUnit.SECONDS,
+                                Util::isInteger, p -> locale.to(p, "trade.format-err")).get()
+                                .flatMap(Util::asInteger);
+                            if (opt.isPresent()) {
+                                val num = opt.get();
+                                if (num > 0) {
+                                    val result = Trades.playerShopTrade(player, rec, num, rec.price < 0).performTransaction();
+                                    locale.to(player, result.getPath(), result.getArgs());
+                                    display.addBlockChange(rec);
+                                } else locale.to(player, "trade.non-negative");
+                            } else locale.to(player, "trade.expire");
+                        } else manage(player, rec);
+                        return null;
+                    });
+                } else locale.to(player, "commands.create.fail.blacklist.trade");
+            });
         }
     }
 

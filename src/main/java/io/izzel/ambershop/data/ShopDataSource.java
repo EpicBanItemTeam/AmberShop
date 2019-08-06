@@ -35,7 +35,7 @@ public interface ShopDataSource {
 
     Future<Optional<ShopRecord>> getById(int id);
 
-    Future<ShopRecord> addRecord(ShopRecord record);
+    Future<OperationResult> addRecord(ShopRecord record);
 
     Future<Collection<ShopRecord>> getByChunk(UUID world, int x, int z);
 

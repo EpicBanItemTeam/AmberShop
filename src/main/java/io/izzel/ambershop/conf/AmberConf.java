@@ -48,6 +48,9 @@ public class AmberConf {
         @Setting(comment = "Tax related settings.")
         public Tax taxSettings = new Tax();
 
+        @Setting(comment = "Item blacklist related settings.")
+        public Ebi blacklistSettings = new Ebi();
+
         @ConfigSerializable
         public static class Tax {
 
@@ -56,6 +59,20 @@ public class AmberConf {
 
             @Setting(comment = "Tax rate.")
             public double tax = 0.02;
+
+        }
+
+        @ConfigSerializable
+        public static class Ebi {
+
+            @Setting(comment = "Enable item blacklist using EpicBanItem, requires version >= 0.3.2.")
+            public boolean enable = false;
+
+            @Setting(comment = "Check EBI when creating a shop.")
+            public boolean checkCreate = true;
+
+            @Setting(comment = "Check EBI when player is trading.")
+            public boolean checkTrade = true;
 
         }
 

@@ -29,6 +29,7 @@ public class AmberConfManager {
         } else {
             val load = HoconConfigurationLoader.builder().setPath(cp).build().load();
             conf = load.getValue(TypeToken.of(AmberConf.class));
+            save();
         }
         Objects.requireNonNull(conf);
         logger.info("Configurations loaded ...");

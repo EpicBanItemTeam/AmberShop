@@ -54,8 +54,12 @@ public class DisplayListener {
     @Inject private AmberTasks tasks;
     @Inject private ShopDataSource ds;
     @Inject private AmberShop instance;
-    @Inject private ShopTradeListener trade;
     @Inject private AmberDisplay display;
+    private ShopTradeListener trade; // No Guice when AmberShop#<init>
+
+    public ShopTradeListener trade() {
+        return trade == null ? trade = AmberShop.INJECTOR.getInstance(ShopTradeListener.class) : trade;
+    }
 
     @Listener
     public void onJoin(ClientConnectionEvent.Join event) {
@@ -99,7 +103,7 @@ public class DisplayListener {
                         } else if (event instanceof InteractBlockEvent.Primary && !event.isCancelled()) { // left click for trading
                             val newEvent = SpongeEventFactory.createInteractBlockEventPrimaryMainHand(event.getCause().with(this),
                                 HandTypes.MAIN_HAND, Optional.empty(), chestLoc.getBlock().snapshotFor(chestLoc), direction);
-                            trade.onTrade(newEvent, player);
+                            trade().onTrade(newEvent, player);
                         }
                     });
                 }

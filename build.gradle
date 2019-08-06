@@ -49,6 +49,7 @@ dependencies {
     compile group: 'net.sf.trove4j', name: 'trove4j', version: '3.0.3'
     compile 'org.bstats:bstats-sponge:1.2'
     compile 'com.github.IzzelAliz:AmberCommon:master-SNAPSHOT'
+    shadow 'com.github.euOnmyoji:EpicBanItem---Sponge:0.3.2:pure'
     shadow 'org.spongepowered:spongeapi:7.1.0'
     shadow 'org.spongepowered:spongecommon:7.1.0:dev'
     shadow 'org.projectlombok:lombok:1.18.2'

@@ -7,6 +7,7 @@ import io.izzel.ambershop.cmd.AmberCommands;
 import io.izzel.ambershop.conf.AmberConfManager;
 import io.izzel.ambershop.data.ShopDataSource;
 import io.izzel.ambershop.listener.*;
+import io.izzel.ambershop.module.EbiModule;
 import io.izzel.ambershop.util.AmberTasks;
 import io.izzel.ambershop.util.Updater;
 import lombok.Getter;
@@ -16,6 +17,7 @@ import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.GameReloadEvent;
+import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStartingServerEvent;
 import org.spongepowered.api.event.game.state.GameStoppingEvent;
 import org.spongepowered.api.plugin.Dependency;
@@ -31,7 +33,8 @@ import org.spongepowered.api.service.economy.EconomyService;
     url = "https://github.com/IzzelAliz/AmberShop",
     dependencies = {
         @Dependency(id = "spongeapi"),
-        @Dependency(id = "economylite", optional = true)
+        @Dependency(id = "economylite", optional = true),
+        @Dependency(id = "epicbanitem", version = "[0.3.2,)", optional = true)
     }
 )
 public class AmberShop {
@@ -45,13 +48,18 @@ public class AmberShop {
         SINGLETON = this;
     }
 
+    @Getter @Inject private AmberConfManager config;
     @Inject public PluginContainer container;
     @Inject private ShopDataSource dataSource;
     @Inject private AmberTasks tasks;
-    @Getter @Inject private AmberConfManager config;
     @Getter @Inject private Metrics metrics;
     @Inject private Updater updater;
     @Inject private AmberLocale locale;
+
+    @Listener
+    public void onGameInit(GameInitializationEvent event) {
+        INJECTOR.getInstance(EbiModule.class);
+    }
 
     @Listener
     public void onServerStart(GameStartingServerEvent event) {

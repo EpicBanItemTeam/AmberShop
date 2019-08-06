@@ -169,7 +169,7 @@ class ShopDataSourceImpl implements ShopDataSource {
 
     @SneakyThrows
     @Override
-    public Future<ShopRecord> addRecord(ShopRecord rec) {
+    public Future<OperationResult> addRecord(ShopRecord rec) {
         rec.id = -1;
         return tasks.async().submit(() -> {
             @Cleanup val conn = storage.connection();
@@ -186,8 +186,8 @@ class ShopDataSourceImpl implements ShopDataSource {
                     chunk(rec.world, rec.x >> 4, rec.z >> 4).put(Blocks.toShort(rec.x, rec.y, rec.z), rec);
                     signDisplay.addBlockChange(rec);
                 });
-                return rec;
-            } else return rec;
+                return OperationResult.of("commands.create.success", rec.id);
+            } else return OperationResult.of("commands.fail.exist-shop");
         });
     }
 

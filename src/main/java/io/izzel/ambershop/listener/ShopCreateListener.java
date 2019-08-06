@@ -6,6 +6,7 @@ import io.izzel.amber.commons.i18n.AmberLocale;
 import io.izzel.ambershop.conf.AmberConfManager;
 import io.izzel.ambershop.data.ShopDataSource;
 import io.izzel.ambershop.data.ShopRecord;
+import io.izzel.ambershop.module.EbiModule;
 import io.izzel.ambershop.util.AmberTasks;
 import io.izzel.ambershop.util.Util;
 import lombok.val;
@@ -31,6 +32,7 @@ public class ShopCreateListener {
     @Inject private AmberTasks tasks;
     @Inject private AmberConfManager cm;
     @Inject private ShopDataSource ds;
+    @Inject private EbiModule ebiModule;
 
     @Include(InteractBlockEvent.Primary.class)
     @Listener(order = Order.LAST)
@@ -48,25 +50,27 @@ public class ShopCreateListener {
             return;  // should be something in hand
         val item = opt.get().copy();
         item.setQuantity(1);
-        tasks.async().submit(() -> {
-            val created = ds.getByPlayer(player).get().size();
-            val max = player.getOption("ambershop.max-shop").flatMap(Util::asInteger).orElse(cm.get().shopSettings.maxShops);
-            if (max == -1 || max > created) {
-                locale.to(player, "trade.input-price", item);
-                val input = tasks.inputNumber(player, cm.get().shopSettings.inputExpireTime, TimeUnit.SECONDS).get();
-                input.ifPresent(price -> tasks.sync().submit(() -> {
-                    if (loc.getTileEntity().filter(TileEntityCarrier.class::isInstance).isPresent())
-                        tasks.async().submit(() -> {
-                            val record = ShopRecord.of(player, loc, price);
-                            record.setItemType(item);
-                            val csr = ds.addRecord(record).get();
-                            locale.to(player, "commands.create.success", csr.id);
-                            return null;
-                        });
-                }));
-            } else locale.to(player, "trade.limit-exceeded");
-            return null;
-        });
+        if (ebiModule.checkCreate(item, player.getWorld(), player)) {
+            tasks.async().submit(() -> {
+                val created = ds.getByPlayer(player).get().size();
+                val max = player.getOption("ambershop.max-shop").flatMap(Util::asInteger).orElse(cm.get().shopSettings.maxShops);
+                if (max == -1 || max > created) {
+                    locale.to(player, "trade.input-price", item);
+                    val input = tasks.inputNumber(player, cm.get().shopSettings.inputExpireTime, TimeUnit.SECONDS).get();
+                    input.ifPresent(price -> tasks.sync().submit(() -> {
+                        if (loc.getTileEntity().filter(TileEntityCarrier.class::isInstance).isPresent())
+                            tasks.async().submit(() -> {
+                                val record = ShopRecord.of(player, loc, price);
+                                record.setItemType(item);
+                                val result = ds.addRecord(record).get();
+                                locale.to(player, result.getPath(), result.getArgs());
+                                return null;
+                            });
+                    }));
+                } else locale.to(player, "trade.limit-exceeded");
+                return null;
+            });
+        } else locale.to(player, "commands.create.fail.blacklist.create");
     }
 
 }
