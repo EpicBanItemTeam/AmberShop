@@ -1,6 +1,7 @@
 package io.izzel.ambershop.data;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -21,6 +22,7 @@ import org.spongepowered.api.world.World;
 import java.sql.Statement;
 import java.util.*;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 @Singleton
 class ShopDataSourceImpl implements ShopDataSource {
@@ -226,6 +228,35 @@ class ShopDataSourceImpl implements ShopDataSource {
         return tasks.sync().submit(() -> {
             shops.get(world).remove(Blocks.toLong(x, z));
             return null;
+        });
+    }
+
+    @Override
+    public Future<OperationResult> fixAll() {
+        return tasks.async().submit(() -> {
+            @Cleanup val conn = storage.connection();
+            @Cleanup val stmt = conn.prepareStatement("select * from ambershop_shops;");
+            @Cleanup val rs = stmt.executeQuery();
+            val corrupt = Lists.<Integer>newArrayList();
+            while (rs.next()) {
+                try {
+                    val id = rs.getInt("id");
+                    try {
+                        ShopRecord.readResultSet(rs);
+                    } catch (Exception e) {
+                        corrupt.add(id);
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+            if (!corrupt.isEmpty()) {
+                @Cleanup val statement = conn.createStatement();
+                val joiner = new StringJoiner(",", "delete from ambershop_shops where id in (", ")");
+                corrupt.stream().map(String::valueOf).forEach(joiner::add);
+                statement.executeUpdate(joiner.toString());
+            }
+            return OperationResult.of("commands.fix", corrupt.size(),
+                corrupt.stream().map(Objects::toString).collect(Collectors.joining(" ")));
         });
     }
 

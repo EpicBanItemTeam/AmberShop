@@ -41,4 +41,6 @@ public interface ShopDataSource {
 
     Future<Void> unloadChunk(UUID world, int x, int z);
 
+    Future<OperationResult> fixAll();
+
 }

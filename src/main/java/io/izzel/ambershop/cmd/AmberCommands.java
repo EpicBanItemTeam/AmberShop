@@ -22,7 +22,8 @@ public class AmberCommands {
     public AmberCommands(AmberLocale locale, AmberConfManager cm,
                          CreateShopExecutor cse, RemoveShopExecutor rse,
                          SetUnlimitedExecutor sue, SetOwnerExecutor soe,
-                         SetPriceExecutor spe, QueryExecutor qe) {
+                         SetPriceExecutor spe, QueryExecutor qe,
+                         FixExecutor fe) {
         val executor = CommandSpec.builder();
         if (cm.get().shopSettings.enable) {
             val create = CommandSpec.builder()
@@ -52,6 +53,11 @@ public class AmberCommands {
                 .executor(spe)
                 .build();
             executor.child(price, "setprice", "price", "p");
+            val fix = CommandSpec.builder()
+                .permission("ambershop.admin.fix")
+                .executor(fe)
+                .build();
+            executor.child(fix, "fix");
             {
                 val queryRemove = CommandSpec.builder()
                     .permission("ambershop.user.query.remove")
