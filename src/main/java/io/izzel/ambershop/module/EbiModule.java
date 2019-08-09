@@ -20,11 +20,21 @@ public class EbiModule {
     @Inject
     public EbiModule(AmberConfManager acm, Logger logger) {
         val ebi = acm.get().shopSettings.blacklistSettings;
-        if (ebi.enable) {
+        if (ebi.enable && checkEbiVersion(logger)) {
             impl = new EbiImpl(ebi.checkCreate, ebi.checkTrade);
             logger.info("Using EpicBanItem for item blacklist.");
         } else {
             impl = new AbstractImpl();
+        }
+    }
+
+    private boolean checkEbiVersion(Logger logger) {
+        try {
+            Class.forName("com.github.euonmyoji.epicbanitem.api.CheckRuleService");
+            return true;
+        } catch (Exception e) {
+            logger.error("Item blacklist module requires EpicBanItem 0.3.2+ .");
+            return false;
         }
     }
 

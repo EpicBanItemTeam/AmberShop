@@ -34,7 +34,7 @@ import org.spongepowered.api.service.economy.EconomyService;
     dependencies = {
         @Dependency(id = "spongeapi"),
         @Dependency(id = "economylite", optional = true),
-        @Dependency(id = "epicbanitem", version = "[0.3.2,)", optional = true)
+        @Dependency(id = "epicbanitem", optional = true)
     }
 )
 public class AmberShop {
