@@ -16,6 +16,7 @@ import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.spec.CommandExecutor;
+import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.util.annotation.NonnullByDefault;
 
@@ -35,7 +36,7 @@ class CreateShopExecutor implements CommandExecutor {
         if (src instanceof Player) {
             val player = ((Player) src);
             val opt = Blocks.playerOnCursor(player);
-            if (opt.isPresent()) {
+            if (opt.isPresent() && opt.get().getBlock().supports(Keys.DIRECTION)) {
                 val te = opt.get().getTileEntity().filter(TileEntityCarrier.class::isInstance);
                 if (te.isPresent()) {
                     val tec = (TileEntityCarrier) te.get();

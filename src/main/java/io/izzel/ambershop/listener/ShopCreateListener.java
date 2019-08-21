@@ -41,7 +41,8 @@ public class ShopCreateListener {
         if (cm.get().shopSettings.createOnlySneaking && !player.get(Keys.IS_SNEAKING).orElse(false)) return; // #5
         if (!player.hasPermission("ambershop.user.create")) return;
         val block = event.getTargetBlock();
-        if (!block.getLocation().flatMap(Location::getTileEntity).filter(TileEntityCarrier.class::isInstance).isPresent()) // should be a chest
+        if (!(block.getLocation().flatMap(Location::getTileEntity).filter(TileEntityCarrier.class::isInstance).isPresent() // should be a chest
+            && block.getState().supports(Keys.DIRECTION))) // should have direction
             return;
         val loc = block.getLocation().get();
         if (ds.getByLocation(loc).isPresent()) return;
