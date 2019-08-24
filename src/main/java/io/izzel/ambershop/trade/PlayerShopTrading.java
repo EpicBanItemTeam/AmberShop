@@ -37,7 +37,6 @@ class PlayerShopTrading implements Trading {
             return OperationResult.fail("trade.transaction-results.sold-out");
         if (Inventories.empty(toInv, type) < count)
             return OperationResult.fail("trade.transaction-results.inventory-full");
-        val items = Inventories.take(fromInv, count, type);
 
         val price = BigDecimal.valueOf(count).multiply(BigDecimal.valueOf(this.price));
         var sr = Util.performEconomy(fromAccount, price, false);
@@ -50,6 +49,7 @@ class PlayerShopTrading implements Trading {
             return cr;
         }
 
+        val items = Inventories.take(fromInv, count, type);
         var success = 0;
         val iterator = items.iterator();
         while (iterator.hasNext()) {
