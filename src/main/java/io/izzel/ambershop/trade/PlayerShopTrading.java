@@ -29,7 +29,7 @@ class PlayerShopTrading implements Trading {
 
     private final ItemStack type;
 
-    private final boolean showTax;
+    private final boolean showTax, hasTax;
 
     @Override
     public OperationResult performTransaction() {
@@ -42,7 +42,7 @@ class PlayerShopTrading implements Trading {
         var sr = Util.performEconomy(fromAccount, price, false);
         if (sr.isFail()) return sr;
         val settings = AmberShop.SINGLETON.getConfig().get().shopSettings.taxSettings;
-        val taxed = settings.enable ? price.multiply(BigDecimal.valueOf(1D - settings.tax)).setScale(2, RoundingMode.HALF_UP) : price;
+        val taxed = hasTax && settings.enable ? price.multiply(BigDecimal.valueOf(1D - settings.tax)).setScale(2, RoundingMode.HALF_UP) : price;
         var cr = Util.performEconomy(toAccount, taxed, true);
         if (cr.isFail()) {
             Util.performEconomy(fromAccount, price, true);

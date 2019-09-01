@@ -17,15 +17,16 @@ public class Trades {
         val chestInv = ((TileEntityCarrier) location.getTileEntity().get()).getInventory();
         val playerInv = Inventories.getMainInventory(player);
         val playerUid = player.getUniqueId();
+        val tax = !player.hasPermission("ambershop.admin.no-tax");
         if (record.isUnlimited()) {
             return new UnlimitedShopTrading(playerInv, playerUid, amount, Math.abs(record.price), record.getItemType().createStack(), sell);
         } else {
             if (sell) {
                 return new PlayerShopTrading(playerInv, chestInv, playerUid, record.owner, amount,
-                    Math.abs(record.price), record.getItemType().createStack(), false);
+                    Math.abs(record.price), record.getItemType().createStack(), false, tax);
             } else {
                 return new PlayerShopTrading(chestInv, playerInv, record.owner, playerUid, amount,
-                    Math.abs(record.price), record.getItemType().createStack(), true);
+                    Math.abs(record.price), record.getItemType().createStack(), true, tax);
             }
         }
     }
