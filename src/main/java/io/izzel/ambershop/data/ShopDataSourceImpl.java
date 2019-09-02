@@ -242,7 +242,7 @@ class ShopDataSourceImpl implements ShopDataSource {
                 try {
                     val id = rs.getInt("id");
                     try {
-                        ShopRecord.readResultSet(rs);
+                        ShopRecord.readResultSet(rs).getLocation();
                     } catch (Exception e) {
                         corrupt.add(id);
                     }
