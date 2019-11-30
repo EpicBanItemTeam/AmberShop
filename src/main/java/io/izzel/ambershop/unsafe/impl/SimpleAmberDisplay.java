@@ -61,6 +61,7 @@ public class SimpleAmberDisplay implements AmberDisplay {
         @SuppressWarnings("ConstantConditions")
         val entityItem = new EntityItem(((WorldServer) location.getExtent()),
             location.getX(), location.getY(), location.getZ(), ((net.minecraft.item.ItemStack) (Object) stack));
+        entityItem.setNoDespawn();
         val newId = entityItem.getEntityId();
         eidMap.computeIfAbsent(player.getUniqueId(), any -> new HashMap<>()).put(location, newId);
         val spawn = new SPacketSpawnObject(entityItem, 2, 1);// type:2 Item data:1 magic value

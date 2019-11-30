@@ -36,10 +36,6 @@ minecraft {
 repositories {
     mavenCentral()
     maven {
-        name = 'bstats-repo'
-        url = 'http://repo.bstats.org/content/repositories/releases'
-    }
-    maven {
         name = 'jitpack'
         url = 'https://jitpack.io'
     }
@@ -47,9 +43,8 @@ repositories {
 
 dependencies {
     compile group: 'net.sf.trove4j', name: 'trove4j', version: '3.0.3'
-    compile 'org.bstats:bstats-sponge:1.2'
     compile 'com.github.IzzelAliz:AmberCommon:master-SNAPSHOT'
-    shadow 'com.github.euOnmyoji:EpicBanItem---Sponge:0.3.2:pure'
+    shadow 'com.github.euOnmyoji:EpicBanItem---Sponge:0.3.3:pure'
     shadow 'org.spongepowered:spongeapi:7.1.0'
     shadow 'org.spongepowered:spongecommon:7.1.0:dev'
     shadow 'org.projectlombok:lombok:1.18.2'
@@ -76,11 +71,9 @@ shadowJar {
 
     dependencies {
         it.include it.dependency('net.sf.trove4j:.*')
-        it.include it.dependency('org.bstats:.*')
         it.include it.dependency('com.github.IzzelAliz:.*')
     }
 
-    relocate 'org.bstats', 'io.izzel.ambershop.internal.org.bstats'
     relocate 'gnu.trove', 'io.izzel.ambershop.internal.gnu.trove'
     exclude 'dummyThing', 'META-INF/fml_cache_annotation.json', 'META-INF/fml_cache_class_versions.json'
 }
