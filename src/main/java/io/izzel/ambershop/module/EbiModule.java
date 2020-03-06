@@ -1,16 +1,23 @@
 package io.izzel.ambershop.module;
 
-import com.github.euonmyoji.epicbanitem.api.CheckRuleService;
-import com.github.euonmyoji.epicbanitem.api.CheckRuleTrigger;
+import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.izzel.amber.commons.i18n.AmberLocale;
+import io.izzel.ambershop.AmberShop;
 import io.izzel.ambershop.conf.AmberConfManager;
 import lombok.SneakyThrows;
 import lombok.val;
 import org.slf4j.Logger;
+import org.spongepowered.api.Sponge;
+import org.spongepowered.api.event.game.GameRegistryEvent;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.service.permission.Subject;
+import org.spongepowered.api.text.Text;
+import org.spongepowered.api.util.annotation.NonnullByDefault;
 import org.spongepowered.api.world.World;
+import team.ebi.epicbanitem.api.CheckRuleService;
+import team.ebi.epicbanitem.api.CheckRuleTrigger;
 
 @Singleton
 public class EbiModule {
@@ -18,10 +25,10 @@ public class EbiModule {
     private final EbiInterface impl;
 
     @Inject
-    public EbiModule(AmberConfManager acm, Logger logger) {
+    public EbiModule(AmberConfManager acm, AmberLocale locale, Logger logger) {
         val ebi = acm.get().shopSettings.blacklistSettings;
         if (ebi.enable && checkEbiVersion(logger)) {
-            impl = new EbiImpl(ebi.checkCreate, ebi.checkTrade);
+            impl = new EbiImpl(locale ,ebi.checkCreate, ebi.checkTrade);
             logger.info("Using EpicBanItem for item blacklist.");
         } else {
             impl = new AbstractImpl();
@@ -30,10 +37,10 @@ public class EbiModule {
 
     private boolean checkEbiVersion(Logger logger) {
         try {
-            Class.forName("com.github.euonmyoji.epicbanitem.api.CheckRuleService");
+            Class.forName("team.ebi.epicbanitem.api.CheckRuleService");
             return true;
         } catch (Exception e) {
-            logger.error("Item blacklist module requires EpicBanItem 0.3.2+ .");
+            logger.error("Item blacklist module requires EpicBanItem 0.4.0+ .");
             return false;
         }
     }
@@ -74,12 +81,18 @@ public class EbiModule {
         private final CheckRuleTrigger tradeTrigger;
 
         @SneakyThrows
-        public EbiImpl(boolean create, boolean trade) {
+        public EbiImpl(AmberLocale locale, boolean create, boolean trade) {
             this.create = create;
             this.trade = trade;
-            service = CheckRuleService.instance();
-            createTrigger = service.getTrigger("as_create", true).orElseThrow(Exception::new);
-            tradeTrigger = service.getTrigger("as_trade", true).orElseThrow(Exception::new);
+            service = Sponge.getServiceManager().provideUnchecked(CheckRuleService.class);
+            Sponge.getEventManager().registerListener(AmberShop.SINGLETON, new TypeToken<GameRegistryEvent.Register<CheckRuleTrigger>>() {},  this::onRegistryTrigger);
+            createTrigger = new TriggerImpl(locale, "create", "ambershop:create");
+            tradeTrigger = new TriggerImpl(locale, "trade", "ambershop:trade");
+        }
+
+        public void onRegistryTrigger(GameRegistryEvent.Register<CheckRuleTrigger> event) {
+            event.register(createTrigger);
+            event.register(tradeTrigger);
         }
 
         @Override
@@ -90,6 +103,40 @@ public class EbiModule {
         @Override
         public boolean checkTrade(ItemStack item, World world, Subject subject) {
             return trade && !service.check(item, world, tradeTrigger, subject).isBanned();
+        }
+
+        @NonnullByDefault
+        private static class TriggerImpl implements CheckRuleTrigger {
+
+            private final AmberLocale locale;
+            private final String name;
+            private final String id;
+
+            private TriggerImpl(AmberLocale locale, String name, String id) {
+                this.locale = locale;
+                this.name = name;
+                this.id = id;
+            }
+
+            @Override
+            public String getId() {
+                return id;
+            }
+
+            @Override
+            public String getName() {
+                return name;
+            }
+
+            @Override
+            public Text toText() {
+                return locale.get("module.ebi.trigger." + name).orElse(Text.of(name));
+            }
+
+            @Override
+            public String toString() {
+                return name;
+            }
         }
 
     }
