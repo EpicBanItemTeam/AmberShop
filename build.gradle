@@ -23,7 +23,6 @@ plugins {
 }
 apply plugin: "net.minecraftforge.gradle.forge"
 def ci = System.getenv().containsKey('CI')
-if (!ci) apply plugin: 'signing'
 
 group = 'io.izzel.ambershop'
 version = '1.1.6' + (ci ? "-ci-${System.getenv('APPVEYOR_REPO_COMMIT').substring(0, 8)}" : '')
@@ -76,13 +75,6 @@ shadowJar {
 
     relocate 'gnu.trove', 'io.izzel.ambershop.internal.gnu.trove'
     exclude 'dummyThing', 'META-INF/fml_cache_annotation.json', 'META-INF/fml_cache_class_versions.json'
-}
-
-if (!ci) {
-    signing {
-        useGpgCmd()
-        sign jar, shadowJar, sourceJar
-    }
 }
 
 jar {
