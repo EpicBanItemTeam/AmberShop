@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
 @ImplementedBy(ShopDataSourceImpl.class)
@@ -37,7 +38,7 @@ public interface ShopDataSource {
 
     Future<OperationResult> addRecord(ShopRecord record);
 
-    Future<Collection<ShopRecord>> getByChunk(UUID world, int x, int z);
+    CompletableFuture<Collection<ShopRecord>> getByChunk(UUID world, int x, int z);
 
     Future<Void> unloadChunk(UUID world, int x, int z);
 

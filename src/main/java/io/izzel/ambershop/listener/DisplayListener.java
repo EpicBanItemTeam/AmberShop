@@ -72,7 +72,7 @@ public class DisplayListener {
     @Listener
     public void onChestClose(InteractInventoryEvent event) {
         if (event.getTargetInventory() instanceof CarriedInventory) {
-            val carrier = ((CarriedInventory) event.getTargetInventory()).getCarrier();
+            val carrier = ((CarriedInventory<?>) event.getTargetInventory()).getCarrier();
             if (carrier.isPresent() && carrier.get() instanceof Chest) {
                 val chest = ((Chest) carrier.get());
                 val loc = chest.getLocation();
@@ -162,10 +162,11 @@ public class DisplayListener {
                         val cx = x + ncx;
                         val cz = z + ncz;
                         if (distance(cx, cz, lx, lz) > 1) { // chunks not displayed
-                            val records = ds.getByChunk(loc.getExtent().getUniqueId(), cx, cz).get();
-                            for (ShopRecord record : records) {
-                                display(record, player.get());
-                            }
+                            ds.getByChunk(loc.getExtent().getUniqueId(), cx, cz).thenAcceptAsync(records -> {
+                                for (ShopRecord record : records) {
+                                    display(record, player.get());
+                                }
+                            }, tasks.sync());
                         }
                     }
                 }

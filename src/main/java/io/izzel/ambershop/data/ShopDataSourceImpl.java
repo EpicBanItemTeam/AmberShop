@@ -21,6 +21,7 @@ import org.spongepowered.api.world.World;
 
 import java.sql.Statement;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
@@ -193,13 +194,14 @@ class ShopDataSourceImpl implements ShopDataSource {
         });
     }
 
+    @SneakyThrows
     @Override
-    public Future<Collection<ShopRecord>> getByChunk(UUID world, int x, int z) {
+    public CompletableFuture<Collection<ShopRecord>> getByChunk(UUID world, int x, int z) {
         val chunk = Blocks.toLong(x, z);
         val worldMap = shops.get(world);
         if (worldMap != null && worldMap.containsKey(chunk))
-            return Futures.immediateCheckedFuture(Collections.unmodifiableCollection(worldMap.get(chunk).valueCollection()));
-        return tasks.async().submit(() -> {
+            return CompletableFuture.completedFuture(Collections.unmodifiableCollection(worldMap.get(chunk).valueCollection()));
+        return CompletableFuture.supplyAsync(() -> {
             @Cleanup val conn = storage.connection();
             @Cleanup val stmt = conn.prepareStatement(
                 "select * from ambershop_shops where chunk = ?;",
@@ -215,7 +217,7 @@ class ShopDataSourceImpl implements ShopDataSource {
                 tasks.sync().submit(() -> chunk(world, x, z).putAll(map));
                 return Collections.unmodifiableCollection(map.valueCollection());
             } else return ImmutableList.of();
-        });
+        }, tasks.async());
     }
 
     @Override
