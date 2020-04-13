@@ -194,7 +194,6 @@ class ShopDataSourceImpl implements ShopDataSource {
         });
     }
 
-    @SneakyThrows
     @Override
     public CompletableFuture<Collection<ShopRecord>> getByChunk(UUID world, int x, int z) {
         val chunk = Blocks.toLong(x, z);
@@ -202,21 +201,25 @@ class ShopDataSourceImpl implements ShopDataSource {
         if (worldMap != null && worldMap.containsKey(chunk))
             return CompletableFuture.completedFuture(Collections.unmodifiableCollection(worldMap.get(chunk).valueCollection()));
         return CompletableFuture.supplyAsync(() -> {
-            @Cleanup val conn = storage.connection();
-            @Cleanup val stmt = conn.prepareStatement(
-                "select * from ambershop_shops where chunk = ?;",
-                Statement.RETURN_GENERATED_KEYS);
-            stmt.setLong(1, chunk);
-            @Cleanup val rs = stmt.executeQuery();
-            val map = new TShortObjectHashMap<ShopRecord>();
-            while (rs.next()) {
-                val record = ShopRecord.readResultSet(rs);
-                map.put(Blocks.toShort(record.x, record.y, record.z), record);
+            try {
+                @Cleanup val conn = storage.connection();
+                @Cleanup val stmt = conn.prepareStatement(
+                    "select * from ambershop_shops where chunk = ?;",
+                    Statement.RETURN_GENERATED_KEYS);
+                stmt.setLong(1, chunk);
+                @Cleanup val rs = stmt.executeQuery();
+                val map = new TShortObjectHashMap<ShopRecord>();
+                while (rs.next()) {
+                    val record = ShopRecord.readResultSet(rs);
+                    map.put(Blocks.toShort(record.x, record.y, record.z), record);
+                }
+                if (map.size() != 0) {
+                    tasks.sync().submit(() -> chunk(world, x, z).putAll(map));
+                    return Collections.unmodifiableCollection(map.valueCollection());
+                } else return ImmutableList.of();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-            if (map.size() != 0) {
-                tasks.sync().submit(() -> chunk(world, x, z).putAll(map));
-                return Collections.unmodifiableCollection(map.valueCollection());
-            } else return ImmutableList.of();
         }, tasks.async());
     }
 
