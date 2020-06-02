@@ -16,8 +16,9 @@ import lombok.val;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.game.GameReloadEvent;
-import org.spongepowered.api.event.game.state.GameInitializationEvent;
+import org.spongepowered.api.event.game.state.GamePreInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStartingServerEvent;
 import org.spongepowered.api.event.game.state.GameStoppingEvent;
 import org.spongepowered.api.plugin.Dependency;
@@ -56,8 +57,8 @@ public class AmberShop {
     @Inject private Updater updater;
     @Inject private AmberLocale locale;
 
-    @Listener
-    public void onGameInit(GameInitializationEvent event) {
+    @Listener(order = Order.LATE)
+    public void onPreInit(GamePreInitializationEvent event) {
         INJECTOR.getInstance(EbiModule.class);
     }
 

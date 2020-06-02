@@ -65,7 +65,7 @@ public class AmberConf {
         @ConfigSerializable
         public static class Ebi {
 
-            @Setting(comment = "Enable item blacklist using EpicBanItem, requires version >= 0.3.2.")
+            @Setting(comment = "Enable item blacklist using EpicBanItem, requires version >= 0.4.0.")
             public boolean enable = false;
 
             @Setting(comment = "Check EBI when creating a shop.")
